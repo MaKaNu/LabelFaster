@@ -8,6 +8,7 @@
 <file alias="green">resources/icons/greenLED.png</file>
 <file alias="off">resources/icons/offLED.png</file>
 <file alias="quit">resources/icons/quit.png</file>
+<file alias="folder">resources/icons/folder.png</file>
 
 <!-- ==============STRINGS============== -->
 
