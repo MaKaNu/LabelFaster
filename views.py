@@ -42,9 +42,20 @@ class WindowMixin(object):
 
 
 class StartWindow(QMainWindow, WindowMixin):
-    def __init__(self):
+    def __init__(self, defaultFilename=None):
         super().__init__()
         self.setWindowTitle(__appname__)
+
+        # Standard QT Parameter
+        self.title = 'ROISA - Region of Interest Selector Automat'
+        self.left = 1
+        self.top = 30
+        self.width = 640
+        self.height = 480
+
+        # Application state.
+        self.image = QImage()
+        self.filePath = defaultFilename
 
         # Load string bundle for i18n
         self.stringBundle = StringBundle.getBundle()
@@ -53,12 +64,7 @@ class StartWindow(QMainWindow, WindowMixin):
             return self.stringBundle.getString(strId)
 
         # Load Model classes
-
-        self.title = 'ROISA - Region of Interest Selector Automat'
-        self.left = 1
-        self.top = 30
-        self.width = 640
-        self.height = 480
+        # self.FileWrapper = FileWrapper(self)
 
         self.selectedClass = 0
         self.selectedFolder = '-'
@@ -68,8 +74,20 @@ class StartWindow(QMainWindow, WindowMixin):
 
         # Actions
         action = partial(newAction, self)
-        quit = action(getStr('quit'), self.close,
-                      'Ctrl+Q', 'quit', getStr('quitApp'))
+
+        quit = action(
+            getStr('quit'),
+            self.close,
+            'Ctrl+Q',
+            'quit',
+            getStr('quitApp'))
+
+        open = action(
+            getStr('file'),
+            FileWrapper.openFile(),
+            'Ctrl+O',
+            'folder',
+            getStr('openFile'))
 
         # Store actions for further handling.
         self.actions = struct(
@@ -114,13 +132,29 @@ class StartWindow(QMainWindow, WindowMixin):
         # Create Toolbars
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            quit, quit, quit, None, quit, quit, quit
+            open, None, quit
             )
 
         addActions(self.tools, self.actions.beginner)
 
         self.statusBar().showMessage('%s started.' % __appname__)
         self.statusBar().show()
+
+    # def openFile(self):
+    #     path = os.path.dirname(self.filePath) if self.filePath else '.'
+    #     formats = [
+    #         '*.%s' % fmt.data().decode("ascii").lower()
+    #         for fmt in QImageReader.supportedImageFormats()]
+    #     filters = "Image & Label files (%s)" % ' '.join(
+    #         formats +
+    #         ['*%s' % LabelFile.suffix])
+    #     filename = QFileDialog.getOpenFileName(
+    #         self,
+    #         '%s - Choose Image or Label file' % __appname__, path, filters)
+    #     if filename:
+    #         if isinstance(filename, (tuple, list)):
+    #             filename = filename[0]
+    #         self.loadFile(filename)
 
 
 def get_main_app(argv=[]):
