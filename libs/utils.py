@@ -41,32 +41,6 @@ def addActions(widget, actions):
             widget.addAction(action)
 
 
-def loadStruct(type, func=None):
-    if str(type) == 'action':
-        return struct(
-            fileMenuActions=(
-                quit),
-            beginner=(),
-            advanced=(),
-            editMenu=(),
-            beginnerContext=(),
-            advancedContext=(),
-            onLoadActive=(),
-            onShapesPresent=()
-            )
-    if str(type) == 'menu':
-        return struct(
-            file=func('&File'),
-            edit=func('&Edit'),
-            view=func('&View'),
-            help=func('&Help'),
-            recentFiles=QMenu('Open &Recent')
-        )
-    else:
-        message = 'No struct "' + str(type) + '" included!'
-        raise InputError(type, message)
-
-
 class struct(object):
 
     def __init__(self, **kwargs):

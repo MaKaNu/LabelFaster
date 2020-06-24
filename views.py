@@ -72,12 +72,32 @@ class StartWindow(QMainWindow, WindowMixin):
                       'Ctrl+Q', 'quit', getStr('quitApp'))
 
         # Store actions for further handling.
-        self.actions = loadStruct('action')
+        self.actions = struct(
+            open=open,
+            fileMenuActions=(
+                open,
+                quit),
+            beginner=(),
+            advanced=(),
+            editMenu=(),
+            beginnerContext=(),
+            advancedContext=(),
+            onLoadActive=(),
+            onShapesPresent=()
+            )
 
         # Create Menus
-        self.menus = loadStruct('menu', lambda x: self.menu(x))
+        self.menus = struct(
+            file=self.menu('&File'),
+            edit=self.menu('&Edit'),
+            view=self.menu('&View'),
+            help=self.menu('&Help'),
+            recentFiles=QMenu('Open &Recent')
+            )
 
+        # Fill Menus
         addActions(self.menus.file, (
+            open,
             quit,
             )
             )
