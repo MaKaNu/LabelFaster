@@ -48,29 +48,35 @@ class StartWindow(QMainWindow, WindowMixin):
 
         # Standard QT Parameter
         self.title = 'ROISA - Region of Interest Selector Automat'
-        self.left = 1
-        self.top = 30
-        self.width = 640
-        self.height = 480
+        self.__left = 1
+        self.__top = 30
+        self.__width = 640
+        self.__height = 480
 
         # Application state.
-        self.image = QImage()
-        self.filePath = defaultFilename
+        self.__image = QImage()
+        self.__filePath = defaultFilename
 
         # Load string bundle for i18n
-        self.stringBundle = StringBundle.getBundle()
+        self.__stringBundle = StringBundle.getBundle()
 
         def getStr(strId):
-            return self.stringBundle.getString(strId)
+            return self.__stringBundle.getString(strId)
 
         # Load Model classes
-        # self.FileWrapper = FileWrapper(self)
+        self.__FileWrapper = FileWrapper(
+            self,
+            self.getPath()
+            )
 
         self.selectedClass = 0
         self.selectedFolder = '-'
         self.selectedNumIm = '-'
         self.selectedImSize = '-'
         self.selectedstrecth = 'cutting'
+
+        # Create Canvas Widget
+        self.__canvas = Canvas(parent=self)
 
         # Actions
         action = partial(newAction, self)
@@ -84,13 +90,13 @@ class StartWindow(QMainWindow, WindowMixin):
 
         open = action(
             getStr('file'),
-            FileWrapper.openFile(),
+            self.__FileWrapper.openFile,
             'Ctrl+O',
             'folder',
             getStr('openFile'))
 
         # Store actions for further handling.
-        self.actions = struct(
+        self.__actions = struct(
             open=open,
             fileMenuActions=(
                 open,
@@ -105,7 +111,7 @@ class StartWindow(QMainWindow, WindowMixin):
             )
 
         # Create Menus
-        self.menus = struct(
+        self.__menus = struct(
             file=self.menu('&File'),
             edit=self.menu('&Edit'),
             view=self.menu('&View'),
@@ -114,7 +120,7 @@ class StartWindow(QMainWindow, WindowMixin):
             )
 
         # Fill Menus
-        addActions(self.menus.file, (
+        addActions(self.__menus.file, (
             open,
             quit,
             )
@@ -130,12 +136,12 @@ class StartWindow(QMainWindow, WindowMixin):
         #     fitWindow, fitWidth))
 
         # Create Toolbars
-        self.tools = self.toolbar('Tools')
-        self.actions.beginner = (
+        self.__tools = self.toolbar('Tools')
+        self.__actions.beginner = (
             open, None, quit
             )
 
-        addActions(self.tools, self.actions.beginner)
+        addActions(self.__tools, self.__actions.beginner)
 
         self.statusBar().showMessage('%s started.' % __appname__)
         self.statusBar().show()

@@ -16,15 +16,14 @@ from pynput.keyboard import Key, Listener, KeyCode
 class FileWrapper(QObject):
     __appname__ = 'ROISA - Region of Interest Selector Automat'
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.parent = parent
+    def __init__(self, Widget, filepath='.'):
+        super().__init__()
+        self.__widget = Widget
+        self.__path = filepath
         self.appname = 'ROISA - Region of Interest Selector Automat'
 
     def openFile(self):
-        filePath = self.parent.filePath
-
-        path = os.path.dirname(filePath) if filePath else '.'
+        path = os.path.dirname(self.__path) if self.__path else '.'
         formats = [
             '*.%s' % fmt.data().decode("ascii").lower()
             for fmt in QImageReader.supportedImageFormats()]
@@ -32,7 +31,7 @@ class FileWrapper(QObject):
             formats +
             ['*%s' % LabelFile.suffix])
         filename = QFileDialog.getOpenFileName(
-            self.parent,
+            None,
             '%s - Choose Image or Label file' % self.appname, path, filters)
         if filename:
             if isinstance(filename, (tuple, list)):
@@ -49,16 +48,16 @@ class FileWrapper(QObject):
         # Fix bug: An  index error after select a directory when open a new file.
         unicodeFilePath = os.path.abspath(filePath)
 
-
         if unicodeFilePath and os.path.exists(unicodeFilePath):
             if LabelFile.isLabelFile(unicodeFilePath):
                 try:
                     self.labelFile = LabelFile(unicodeFilePath)
                 except LabelFileError as e:
-                    self.errorMessage(u'Error opening file',
-                                      (u"<p><b>%s</b></p>"
-                                       u"<p>Make sure <i>%s</i> is a valid label file.")
-                                      % (e, unicodeFilePath))
+                    self.errorMessage(u'Error opening file', (
+                        u"<p><b>%s</b></p>"
+                        u"<p>Make sure <i>%s</i> is a valid label file."
+                        ) % (e, unicodeFilePath)
+                        )
                     self.status("Error reading %s" % unicodeFilePath)
                     return False
                 self.imageData = self.labelFile.imageData
@@ -70,12 +69,15 @@ class FileWrapper(QObject):
                 # read data first and store for saving into label file.
                 self.imageData = read(unicodeFilePath, None)
                 self.labelFile = None
-                self.canvas.verified = False
+                self.__widget.canvas.verified = False
 
             image = QImage.fromData(self.imageData)
             if image.isNull():
-                self.errorMessage(u'Error opening file',
-                                  u"<p>Make sure <i>%s</i> is a valid image file." % unicodeFilePath)
+                self.errorMessage(
+                    u'Error opening file',
+                    u"<p>Make sure <i>%s</i> is a valid image file."
+                    % unicodeFilePath
+                    )
                 self.status("Error reading %s" % unicodeFilePath)
                 return False
             self.status("Loaded %s" % os.path.basename(unicodeFilePath))
