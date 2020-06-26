@@ -146,6 +146,17 @@ class StartWindow(QMainWindow, WindowMixin):
         self.statusBar().showMessage('%s started.' % __appname__)
         self.statusBar().show()
 
+    ###########################################################################
+    #                               G E T T E R                               #
+    ###########################################################################
+
+    def getPath(self):
+        return self.__filePath
+
+    ###########################################################################
+    #                               S E T T E R                               #
+    ###########################################################################
+
     # def openFile(self):
     #     path = os.path.dirname(self.filePath) if self.filePath else '.'
     #     formats = [
