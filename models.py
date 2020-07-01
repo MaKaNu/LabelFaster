@@ -37,6 +37,8 @@ class FileWrapper(QObject):
             if isinstance(filename, (tuple, list)):
                 filename = filename[0]
             self.loadFile(filename)
+        elif filename[0] == '':
+            pass # Set a variable later to stop throwing the wrong datatype message
 
     def loadFile(self, filePath=None):
         """Load the specified file, or the last opened file if None."""
@@ -69,7 +71,7 @@ class FileWrapper(QObject):
                 # read data first and store for saving into label file.
                 self.imageData = read(unicodeFilePath, None)
                 self.labelFile = None
-                self.__widget.canvas.verified = False
+                self.__widget.__canvas.verified = False
 
             image = QImage.fromData(self.imageData)
             if image.isNull():

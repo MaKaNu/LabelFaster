@@ -17,6 +17,7 @@ from libs.utils import *
 from libs.resources import *
 from libs.stringBundle import StringBundle
 from libs.toolBar import ToolBar
+from libs.canvas import Canvas
 from libs.errors import *
 
 __appname__ = 'ROISA - Region of Interest Selector Automat'
