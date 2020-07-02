@@ -2,9 +2,13 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from libs.labelFile import LabelFile
+
+import os
+
 
 def openFile(self):
-    path = os.path.dirname(self.__path) if self.__path else '.'
+    path = os.path.dirname(self.path) if self.path else '.'
     formats = [
         '*.%s' % fmt.data().decode("ascii").lower()
         for fmt in QImageReader.supportedImageFormats()]
@@ -53,7 +57,7 @@ def loadFile(self, filePath=None):
             # read data first and store for saving into label file.
             self.imageData = read(unicodeFilePath, None)
             self.labelFile = None
-            self.__widget.__canvas.verified = False
+            self.canvas.verified = False
 
         image = QImage.fromData(self.imageData)
         if image.isNull():
@@ -110,3 +114,11 @@ def loadFile(self, filePath=None):
         self.canvas.setFocus(True)
         return True
     return False
+
+
+def read(filename, default=None):
+    try:
+        with open(filename, 'rb') as f:
+            return f.read()
+    except FileNotFoundError:
+        return default

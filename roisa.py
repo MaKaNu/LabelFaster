@@ -29,7 +29,7 @@ def get_main_app(argv=[]):
     app.setWindowIcon(newIcon("logo"))
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
     # Usage : labelImg.py image predefClassFile saveDir
-    win = StartWindow()
+    win = StartWindow(appname=__appname__)
     # win = MainWindow(argv[1] if len(argv) >= 2 else None,
     #                  argv[2] if len(argv) >= 3 else os.path.join(
     #                      os.path.dirname(sys.argv[0]),

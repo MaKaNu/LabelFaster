@@ -32,6 +32,7 @@ class WindowMixin(object):
 class StartWindow(QMainWindow, WindowMixin):
     def __init__(self, appname='defaultName', defaultFilename=None):
         super().__init__()
+        self.__appname = appname
         self.setWindowTitle(appname)
 
         # Standard QT Parameter
@@ -109,5 +110,34 @@ class StartWindow(QMainWindow, WindowMixin):
         self.statusBar().showMessage('%s started.' % appname)
         self.statusBar().show()
 
+    ###########################################################################
+    #                       I M P O R T   M E T H O D S                       #
+    ###########################################################################
+
     from ._actions import get_open, get_quit
     from ._filehandler import openFile, loadFile
+
+    ###########################################################################
+    #                               G E T T E R                               #
+    ###########################################################################
+
+    def __getPath(self):
+        return self.__filePath
+
+    def __getAppname(self):
+        return self.__appname
+
+    def __getCanvas(self):
+        return self.__canvas
+
+    ###########################################################################
+    #                               S E T T E R                               #
+    ###########################################################################
+
+    ###########################################################################
+    #                           P R O P E R T I E S                           #
+    ###########################################################################
+
+    path = property(__getPath)
+    appname = property(__getAppname)
+    canvas = property(__getCanvas)
