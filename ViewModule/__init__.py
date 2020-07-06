@@ -116,6 +116,7 @@ class StartWindow(QMainWindow, WindowMixin):
 
     from ._actions import get_open, get_quit
     from ._filehandler import openFile, loadFile
+    from ._events import status
 
     ###########################################################################
     #                               G E T T E R                               #
@@ -133,6 +134,15 @@ class StartWindow(QMainWindow, WindowMixin):
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
+
+    def setDirty(self):
+        self.__dirty = True
+        # self.actions.save.setEnabled(True)
+
+    def setClean(self):
+        self.__dirty = False
+        # self.__actions.save.setEnabled(False)
+        # self.__actions.create.setEnabled(True)
 
     ###########################################################################
     #                           P R O P E R T I E S                           #

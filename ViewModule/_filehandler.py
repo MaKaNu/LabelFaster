@@ -18,7 +18,7 @@ def openFile(self):
     filename = QFileDialog.getOpenFileName(
         None,
         '%s - Choose Image or Label file' % self.appname, path, filters)
-    if filename:
+    if all(filename):
         if isinstance(filename, (tuple, list)):
             filename = filename[0]
         self.loadFile(filename)
