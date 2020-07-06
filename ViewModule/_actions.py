@@ -35,3 +35,14 @@ def get_open(self):
         'folder',
         getStr('openFile'))
     return open
+
+
+def get_class0(self):
+    action = partial(newAction, self)
+    open = action(
+        getStr('class0'),
+        self.switchClass,
+        '1',
+        'green',
+        getStr('class0'))
+    return open

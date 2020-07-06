@@ -60,9 +60,7 @@ class StartWindow(QMainWindow, WindowMixin):
 
         # Load string bundle for i18n
         self.__stringBundle = StringBundle.getBundle()
-
-        def getStr(strId):
-            return self.__stringBundle.getString(strId)
+        def getStr(strId): return self.__stringBundle.getString(strId)
 
         # Load Model classes
         self.__FileWrapper = FileWrapper(
@@ -95,6 +93,15 @@ class StartWindow(QMainWindow, WindowMixin):
             'Ctrl+O',
             'folder',
             getStr('openFile'))
+
+        class0 = action(
+            getStr('class0'),
+            self.switchClass,
+            'Ctrl+1',
+            'class0',
+            getStr('class0')
+
+        )
 
         # Store actions for further handling.
         self.__actions = struct(
@@ -147,6 +154,10 @@ class StartWindow(QMainWindow, WindowMixin):
         self.statusBar().showMessage('%s started.' % __appname__)
         self.statusBar().show()
 
+    def adjustScale(self, initial=False):
+        value = self.scalers[self.FIT_WINDOW if initial else self.zoomMode]()
+        self.zoomWidget.setValue(int(100 * value))
+
     ###########################################################################
     #                               G E T T E R                               #
     ###########################################################################
@@ -157,22 +168,6 @@ class StartWindow(QMainWindow, WindowMixin):
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
-
-    # def openFile(self):
-    #     path = os.path.dirname(self.filePath) if self.filePath else '.'
-    #     formats = [
-    #         '*.%s' % fmt.data().decode("ascii").lower()
-    #         for fmt in QImageReader.supportedImageFormats()]
-    #     filters = "Image & Label files (%s)" % ' '.join(
-    #         formats +
-    #         ['*%s' % LabelFile.suffix])
-    #     filename = QFileDialog.getOpenFileName(
-    #         self,
-    #         '%s - Choose Image or Label file' % __appname__, path, filters)
-    #     if filename:
-    #         if isinstance(filename, (tuple, list)):
-    #             filename = filename[0]
-    #         self.loadFile(filename)
 
 
 def get_main_app(argv=[]):

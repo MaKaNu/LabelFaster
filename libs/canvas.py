@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import *
 from libs.stringBundle import StringBundle
 from libs.errors import *
 
+
 class Canvas(QWidget):
 
     def __init__(self, *args, **kwargs):
@@ -55,7 +56,6 @@ class Canvas(QWidget):
 
     def __setShapes(self, x):
         self.__shapes = x
-
 
     ###########################################################################
     #                           P R O P E R T I E S                           #

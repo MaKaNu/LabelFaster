@@ -3,6 +3,10 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 from libs.labelFile import LabelFile
+from libs.pascal_io import PascalVocReader
+from libs.pascal_io import XML_EXT
+from libs.yolo_io import YoloReader
+from libs.yolo_io import TXT_EXT
 
 import os
 
@@ -78,8 +82,8 @@ def loadFile(self, filePath=None):
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
         self.paintCanvas()
-        self.addRecentFile(self.filePath)
-        self.toggleActions(True)
+        # self.addRecentFile(self.filePath)
+        # self.toggleActions(True)
 
         # Label xml file and show bound box according to its filename
         # if self.usingPascalVocFormat is True:
@@ -104,12 +108,12 @@ def loadFile(self, filePath=None):
             elif os.path.isfile(txtPath):
                 self.loadYOLOTXTByFilename(txtPath)
 
-        self.setWindowTitle(__appname__ + ' ' + filePath)
+        self.setWindowTitle(self.appname + ' ' + filePath)
 
         # Default : select last item if there is at least one item
-        if self.labelList.count():
-            self.labelList.setCurrentItem(self.labelList.item(self.labelList.count()-1))
-            self.labelList.item(self.labelList.count()-1).setSelected(True)
+        # if self.labelList.count():
+        #     self.labelList.setCurrentItem(self.labelList.item(self.labelList.count()-1))
+        #     self.labelList.item(self.labelList.count()-1).setSelected(True)
 
         self.canvas.setFocus(True)
         return True
