@@ -8,7 +8,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 # from models import image_loader, ROI_controller, KeyMonitor
-from views import StartWindow, startApp
+#from views import StartWindow, startApp
 
 from libs.utils import *
 # from libs.resources import *
