@@ -30,7 +30,14 @@ class WindowMixin(object):
 
 
 class StartWindow(QMainWindow, WindowMixin):
-    def __init__(self, appname='defaultName', defaultFilename=None):
+    FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = list(range(3))
+
+    def __init__(
+            self,
+            appname='defaultName',
+            defaultFilename=None,
+            defaultPrefdefClassFile=None,
+            defaultSaveDir=None):
         super().__init__()
         self.__appname = appname
         self.setWindowTitle(appname)

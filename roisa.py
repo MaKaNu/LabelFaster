@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 import ctypes
 import sys
+from pathlib import Path
+import os
 
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 # from models import image_loader, ROI_controller, KeyMonitor
-#from views import StartWindow, startApp
+# from views import StartWindow, startApp
 
 from libs.utils import *
 # from libs.resources import *
@@ -29,12 +31,14 @@ def get_main_app(argv=[]):
     app.setWindowIcon(newIcon("logo"))
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
     # Usage : labelImg.py image predefClassFile saveDir
-    win = StartWindow(appname=__appname__)
-    # win = MainWindow(argv[1] if len(argv) >= 2 else None,
-    #                  argv[2] if len(argv) >= 3 else os.path.join(
-    #                      os.path.dirname(sys.argv[0]),
-    #                      'data', 'predefined_classes.txt'),
-    #                  argv[3] if len(argv) >= 4 else None)
+    win = StartWindow(
+        __appname__,
+        argv[1] if len(argv) >= 2 else None,
+        argv[2] if len(argv) >= 3 else (
+            Path(argv[0]).parent /
+            Path('data') /
+            Path('predefined_classes.txt')),
+        argv[3] if len(argv) >= 4 else None)
     win.show()
     return app, win
 
