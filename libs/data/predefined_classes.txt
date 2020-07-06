@@ -1,0 +1,4 @@
+sand
+soil
+bedrock
+big rocks
