@@ -16,3 +16,18 @@ class InputError(Error):
         self.input = input
         self.message = message
         super().__init__(self.message)
+
+
+class ValueError(Error):
+    """Exception raised for error in the value (standard just input and
+    standard message)
+
+    Attributes:
+        value -- the value which caused while setting
+        message -- explanation of the error
+    """
+
+    def __init__(self, value, message='Wrong value'):
+        self.value = value
+        self.message = message
+        super().__init__(self.message)

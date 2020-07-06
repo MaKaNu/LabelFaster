@@ -2,10 +2,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
-from warnings import warn
-
 from libs.stringBundle import StringBundle
-
+from libs.errors import *
 
 class Canvas(QWidget):
 
