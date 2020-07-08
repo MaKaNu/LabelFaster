@@ -43,7 +43,7 @@ class StartWindow(QMainWindow, WindowMixin):
             self,
             appname='defaultName',
             defaultFilename=None,
-            defaultPrefdefClassFile=None,
+            defaultPredefClassFile=None,
             defaultSaveDir=None):
         super().__init__()
         self.__appname = appname
@@ -56,9 +56,16 @@ class StartWindow(QMainWindow, WindowMixin):
         self.__width = 640
         self.__height = 480
 
+        # For loading all image under a directory
+        self.mImgList = []
+        self.dirname = None
+        self.labelHist = []
+        self.lastOpenDir = None
+
         # Application state.
         self.__image = QImage()
         self.__filePath = defaultFilename
+        self.__loadPredefinedClasses(defaultPredefClassFile)
 
         # Load string bundle for i18n
         self.__stringBundle = StringBundle.getBundle()
@@ -203,7 +210,7 @@ class StartWindow(QMainWindow, WindowMixin):
         action.setIcon(newIcon('red'))
         self.__actions.class0 = action
 
-    def loadPredefinedClasses(self, predefClassesFile):
+    def __loadPredefinedClasses(self, predefClassesFile):
         if Path(predefClassesFile).exists():
             with codecs.open(predefClassesFile, 'r', 'utf8') as f:
                 for line in f:

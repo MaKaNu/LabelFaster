@@ -9,6 +9,7 @@ from libs.yolo_io import YoloReader
 from libs.yolo_io import TXT_EXT
 
 import os
+import codecs
 
 
 def openFile(self):
@@ -118,6 +119,17 @@ def loadFile(self, filePath=None):
         self.canvas.setFocus(True)
         return True
     return False
+
+
+def loadPredefinedClasses(self, predefClassesFile):
+    if predefClassesFile.exists():
+        with codecs.open(predefClassesFile, 'r', 'utf8') as f:
+            for line in f:
+                line = line.strip()
+                if self.labelHist is None:
+                    self.labelHist = [line]
+                else:
+                    self.labelHist.append(line)
 
 
 def read(filename, default=None):
