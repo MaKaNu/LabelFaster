@@ -31,3 +31,10 @@ class ValueError(Error):
         self.value = value
         self.message = message
         super().__init__(self.message)
+
+
+class ClassesError(Error):
+    def __init__(self, value, message='Some Problems with LabelClasses'):
+        self.value = value
+        self.message = message
+        super().__init__(self.message)
