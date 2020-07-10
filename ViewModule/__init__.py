@@ -99,12 +99,10 @@ class StartWindow(QMainWindow, WindowMixin):
         # Load Actions
         quit = self.get_quit()
         open = self.get_open()
-        class0 = self.get_class0()
 
         # Store actions for further handling.
-        self.__actions = struct(
+        self.actions = struct(
             open=open,
-            class0=class0,
             fileMenuActions=(
                 open,
                 quit),
@@ -118,8 +116,14 @@ class StartWindow(QMainWindow, WindowMixin):
             onShapesPresent=()
             )
 
+        # Store class Actions
+        self.classes = struct(
+            activeClass=None
+            )
+        self.create_classes()
+
         # Create Menus
-        self.__menus = struct(
+        self.menus = struct(
             file=self.menu('&File'),
             edit=self.menu('&Edit'),
             view=self.menu('&View'),
@@ -128,7 +132,7 @@ class StartWindow(QMainWindow, WindowMixin):
             )
 
         # Fill Menus
-        addActions(self.__menus.file, (
+        addActions(self.menus.file, (
             open,
             quit,
             )
@@ -144,17 +148,16 @@ class StartWindow(QMainWindow, WindowMixin):
         #     fitWindow, fitWidth))
 
         # Create Toolbars
-        self.__tools = self.toolbar('Tools', position='left')
-        self.__classes = self.toolbar('Classes', position='top')
-        self.__actions.beginner = (
+        self.tools = self.toolbar('Tools', position='left')
+        self.classtools = self.toolbar('Classes', position='top')
+        self.actions.beginner = (
             open, None, quit
             )
-        self.__actions.classes = (
-            class0, class0
-            )
 
-        addActions(self.__tools, self.__actions.beginner)
-        addActions(self.__classes, self.__actions.classes)
+        self.actions.classes = self.get_classes()
+
+        addActions(self.tools, self.actions.beginner)
+        addActions(self.classtools, self.actions.classes)
 
         self.statusBar().showMessage('%s started.' % appname)
         self.statusBar().show()
@@ -170,7 +173,7 @@ class StartWindow(QMainWindow, WindowMixin):
     #                       I M P O R T   M E T H O D S                       #
     ###########################################################################
 
-    from ._actions import get_open, get_quit, get_class0
+    from ._actions import get_open, get_quit, create_classes, get_classes
     from ._filehandler import openFile, loadFile
     from ._events import status
 
@@ -206,9 +209,16 @@ class StartWindow(QMainWindow, WindowMixin):
         self.canvas.update()
 
     def switchClass(self):
-        action = self.__actions.class0
-        action.setIcon(newIcon('red'))
-        self.__actions.class0 = action
+        name = self.sender().toolTip()
+        getattr(self.classes, name).setIcon(newIcon('green'))
+        if (
+                self.classes.activeClass is not None and
+                not self.classes.activeClass == name):
+            getattr(
+                self.classes,
+                self.classes.activeClass
+                ).setIcon(newIcon('red'))
+        setattr(self.classes, 'activeClass', name)
 
     def __loadPredefinedClasses(self, predefClassesFile):
         if Path(predefClassesFile).exists():
