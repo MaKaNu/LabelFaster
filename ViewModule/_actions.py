@@ -53,7 +53,7 @@ def create_classes(self):
             if classes.index(classname) == 19:
                 shortcut = 'Ctrl+' + str(0)
             else:
-                shortcut = 'Ctrl+' + str(classes.index(classname) + 1)
+                shortcut = 'Ctrl+' + str(classes.index(classname) - 9)
         classvar = action(
             classname,
             self.switchClass,
