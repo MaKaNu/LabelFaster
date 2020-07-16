@@ -290,16 +290,11 @@ class StartWindow(QMainWindow, WindowMixin):
         self.canvas.update()
 
     def switchClass(self):
-        name = self.sender().toolTip()
-        getattr(self.classes, name).setIcon(newIcon('green'))
-        if (
-                self.classes.activeClass is not None and
-                not self.classes.activeClass == name):
-            getattr(
-                self.classes,
-                self.classes.activeClass
-                ).setIcon(newIcon('red'))
-        setattr(self.classes, 'activeClass', name)
+        self.sender().setIcon(newIcon('green'))
+        if (self.classes.activeClass is not None and
+                not self.classes.activeClass == self.sender()):
+            self.classes.activeClass.setIcon(newIcon('red'))
+        setattr(self.classes, 'activeClass', self.sender())
 
     def __loadPredefinedClasses(self, predefClassesFile):
         if Path(predefClassesFile).exists():
