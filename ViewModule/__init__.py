@@ -303,6 +303,11 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getDefaultSaveDir(self):
         return self.__defaultSaveDir
 
+    def __getImage(self):
+        return self.__image
+
+    def getStr(self, strId):
+        return self.__stringBundle.getString(strId)
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
@@ -319,6 +324,9 @@ class StartWindow(QMainWindow, WindowMixin):
         # self.__actions.save.setEnabled(False)
         # self.__actions.create.setEnabled(True)
 
+    def __setImage(self, x):
+        self.__image = x
+
     ###########################################################################
     #                           P R O P E R T I E S                           #
     ###########################################################################
@@ -326,4 +334,5 @@ class StartWindow(QMainWindow, WindowMixin):
     path = property(__getPath)
     appname = property(__getAppname)
     canvas = property(__getCanvas)
+    image = property(__getImage, __setImage)
     defaultSaveDir = property(__getDefaultSaveDir, __setDefaultSaveDir)
