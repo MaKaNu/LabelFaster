@@ -28,7 +28,24 @@ class Canvas(QWidget):
 
     def setEditing(self, value=True):
         self.mode = self.EDIT if value else self.CREATE
+
     ###########################################################################
+    #                                P O S E S                                #
+    ###########################################################################
+
+    def transformPos(self, point):
+        # Convert from widget-logical coord to painter-logical coord.
+        return point / self.scale - self.offsetToCenter()
+
+    def offsetToCenter(self):
+        s = self.scale
+        area = super(Canvas, self).size()
+        w, h = self.pixmap.width() * s, self.pixmap.height() * s
+        aw, ah = area.width(), area.height()
+        x = (aw - w) / (2 * s) if aw > w else 0
+        y = (ah - h) / (2 * s) if ah > h else 0
+        return QPointF(x, y)
+
     #                               G E T T E R                               #
     ###########################################################################
 
