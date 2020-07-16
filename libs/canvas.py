@@ -71,6 +71,54 @@ class Canvas(QWidget):
         return not (0 <= p.x() <= w and 0 <= p.y() <= h)
 
     ###########################################################################
+    #                               E V E N T S                               #
+    ###########################################################################
+
+    def enterEvent(self, ev):
+        self.overrideCursor(self._cursor)
+
+    def leaveEvent(self, ev):
+        self.restoreCursor()
+
+    def mouseMoveEvent(self, ev):
+        """Update line with last point and current coordinates."""
+        pos = self.transformPos(ev.pos())
+
+        # Update coordinates in status bar if image is opened
+        window = self.parent().window()
+        if window.filePath is not None:
+            self.parent().window().labelCoordinates.setText(
+                'X: %d; Y: %d' % (pos.x(), pos.y()))
+
+    def paintEvent(self, event):
+        if not self.pixmap:
+            return super(Canvas, self).paintEvent(event)
+
+        p = self._painter
+        p.begin(self)
+        # #^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^# #
+        # --------------------------- begin paint --------------------------- #
+        # #^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^# #
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.HighQualityAntialiasing)
+        p.setRenderHint(QPainter.SmoothPixmapTransform)
+
+        p.scale(self.scale, self.scale)
+        p.translate(self.offsetToCenter())
+
+        p.drawPixmap(0, 0, self.pixmap)
+
+        Shape.scale = self.scale
+        for shape in self.shapes:
+            if (shape.selected or not self._hideBackround) and self.isVisible(shape):
+                shape.fill = shape.selected or shape == self.hShape
+                shape.paint(p)
+        # #^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^# #
+        # ---------------------------- end paint ---------------------------- #
+        # #^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^# #
+        p.end()
+
+    ###########################################################################
     #                               G E T T E R                               #
     ###########################################################################
 
