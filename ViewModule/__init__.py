@@ -227,6 +227,10 @@ class StartWindow(QMainWindow, WindowMixin):
             self.MANUAL_ZOOM: lambda: 1,
         }
 
+        # Display cursor coordinates at the right of status bar
+        self.labelCoordinates = QLabel('')
+        self.statusBar().addPermanentWidget(self.labelCoordinates)
+
         # Resize and Position Application
         size = settings.get(SETTING_WIN_SIZE, QSize(600, 500))
         position = QPoint(0, 0)
