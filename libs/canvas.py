@@ -46,6 +46,31 @@ class Canvas(QWidget):
         y = (ah - h) / (2 * s) if ah > h else 0
         return QPointF(x, y)
 
+    ###########################################################################
+    #                               C U R S O R                               #
+    ###########################################################################
+
+    def currentCursor(self):
+        cursor = QApplication.overrideCursor()
+        if cursor is not None:
+            cursor = cursor.shape()
+        return cursor
+
+    def overrideCursor(self, cursor):
+        self._cursor = cursor
+        if self.currentCursor() is None:
+            QApplication.setOverrideCursor(cursor)
+        else:
+            QApplication.changeOverrideCursor(cursor)
+
+    def restoreCursor(self):
+        QApplication.restoreOverrideCursor()
+
+    def outOfPixmap(self, p):
+        w, h = self.pixmap.width(), self.pixmap.height()
+        return not (0 <= p.x() <= w and 0 <= p.y() <= h)
+
+    ###########################################################################
     #                               G E T T E R                               #
     ###########################################################################
 
