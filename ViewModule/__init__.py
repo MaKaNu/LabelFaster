@@ -219,12 +219,25 @@ class StartWindow(QMainWindow, WindowMixin):
         self.statusBar().showMessage('%s started.' % appname)
         self.statusBar().show()
 
+        self.zoomMode = self.MANUAL_ZOOM
         self.scalers = {
             self.FIT_WINDOW: self.scaleFitWindow,
             self.FIT_WIDTH: self.scaleFitWidth,
             # Set to one to scale to 100% when loading files.
             self.MANUAL_ZOOM: lambda: 1,
         }
+
+        # Resize and Position Application
+        size = settings.get(SETTING_WIN_SIZE, QSize(600, 500))
+        position = QPoint(0, 0)
+        saved_position = settings.get(SETTING_WIN_POSE, position)
+        for i in range(QApplication.desktop().screenCount()):
+            desktop = QApplication.desktop().availableGeometry(i)
+            if desktop.contains(saved_position):
+                position = saved_position
+                break
+        self.resize(size)
+        self.move(position)
 
     ###########################################################################
     #                       I M P O R T   M E T H O D S                       #
@@ -241,6 +254,12 @@ class StartWindow(QMainWindow, WindowMixin):
     def adjustScale(self, initial=False):
         value = self.scalers[self.FIT_WINDOW if initial else self.zoomMode]()
         self.zoomWidget.setValue(int(100 * value))
+
+    def resizeEvent(self, event):
+        if self.canvas and not self.image.isNull()\
+           and self.zoomMode != self.MANUAL_ZOOM:
+            self.adjustScale()
+        super(StartWindow, self).resizeEvent(event)
 
     def scaleFitWindow(self):
         # Figure out the size of the pixmap in order to fit the main widget.
