@@ -7,10 +7,12 @@ from PyQt5.QtWidgets import *
 
 from libs.utils import *
 from libs.resources import *
+from libs.constants import *
 from libs.stringBundle import StringBundle
 from libs.toolBar import ToolBar
 from libs.canvas import Canvas
 from libs.zoomWidget import ZoomWidget
+from libs.settings import Settings
 from libs.errors import *
 
 
@@ -49,12 +51,13 @@ class StartWindow(QMainWindow, WindowMixin):
         self.__appname = appname
         self.setWindowTitle(appname)
 
+        # Load setting in the main thread
+        self.settings = Settings()
+        self.settings.load()
+        settings = self.settings
+
         # Standard QT Parameter
         self.title = 'ROISA - Region of Interest Selector Automat'
-        self.__left = 1
-        self.__top = 30
-        self.__width = 640
-        self.__height = 480
 
         # For loading all image under a directory
         self.mImgList = []
