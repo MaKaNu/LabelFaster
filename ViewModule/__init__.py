@@ -247,7 +247,8 @@ class StartWindow(QMainWindow, WindowMixin):
     #                       I M P O R T   M E T H O D S                       #
     ###########################################################################
 
-    from ._actions import get_open, get_quit, create_classes, get_classes
+    from ._actions import get_open, get_quit, create_classes, get_classes,\
+        get_startlabel
     from ._filehandler import openFile, loadFile
     from ._events import status
 
