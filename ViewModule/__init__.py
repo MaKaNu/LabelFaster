@@ -141,20 +141,30 @@ class StartWindow(QMainWindow, WindowMixin):
         self.dockFeatures = QDockWidget.DockWidgetClosable \
             | QDockWidget.DockWidgetFloatable
         self.boxDock.setFeatures(self.boxDock.features() ^ self.dockFeatures)
+
+        # ____    _   ___ _____ ___ ___  _  _ ___     _____
+        #    /   /_\ / __|_   _|_ _/ _ \| \| / __|   /     \
+        #   /   / _ \ (__  | |  | | (_) | .` \__ \  /       \
+        # __\  /_/ \_\___| |_| |___\___/|_|\_|___/  \_______/
+
         # Load Actions
         quit = self.get_quit()
         open = self.get_open()
+        start = self.get_startlabel()
 
         # Store actions for further handling.
         self.actions = struct(
+            quit=quit,
             open=open,
+            start=start,
             fileMenuActions=(
                 open,
                 quit),
             beginner=(),
             advanced=(),
             classes=(),
-            editMenu=(),
+            editMenu=(
+                start,),
             beginnerContext=(),
             advancedContext=(),
             onLoadActive=(),
@@ -180,8 +190,10 @@ class StartWindow(QMainWindow, WindowMixin):
         addActions(self.menus.file, (
             open,
             quit,
-            )
-            )
+        ))
+        addActions(self.menus.edit, (
+            start,
+        ))
         # addActions(self.menus.help, (help, showInfo))
         # addActions(self.menus.view, (
         #     self.autoSaving,
@@ -196,7 +208,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.tools = self.toolbar('Tools', position='left')
         self.classtools = self.toolbar('Classes', position='top')
         self.actions.beginner = (
-            open, None, quit
+            open, None, start, quit
             )
 
         self.actions.classes = self.get_classes()
