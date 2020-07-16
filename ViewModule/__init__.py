@@ -134,7 +134,13 @@ class StartWindow(QMainWindow, WindowMixin):
         self.scrollArea = scroll
 
         self.setCentralWidget(scroll)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.boxDock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.fileDock)
+        self.fileDock.setFeatures(QDockWidget.DockWidgetFloatable)
 
+        self.dockFeatures = QDockWidget.DockWidgetClosable \
+            | QDockWidget.DockWidgetFloatable
+        self.boxDock.setFeatures(self.boxDock.features() ^ self.dockFeatures)
         # Load Actions
         quit = self.get_quit()
         open = self.get_open()
