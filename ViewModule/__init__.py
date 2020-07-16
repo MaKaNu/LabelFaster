@@ -311,6 +311,12 @@ class StartWindow(QMainWindow, WindowMixin):
                     else:
                         self.labelHist.append(line)
 
+    def setCreateMode(self):
+        self.toggleDrawMode(False)
+
+    def toggleDrawMode(self, edit=True):
+        self.canvas.setEditing(edit)
+
     ###########################################################################
     #                               G E T T E R                               #
     ###########################################################################
