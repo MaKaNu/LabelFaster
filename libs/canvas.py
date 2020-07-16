@@ -1,9 +1,18 @@
+from re import sub
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 from libs.stringBundle import StringBundle
+from libs.shape import Shape
+from libs.utils import distance
 from libs.errors import *
+
+CURSOR_DEFAULT = Qt.ArrowCursor
+CURSOR_POINT = Qt.PointingHandCursor
+CURSOR_DRAW = Qt.CrossCursor
+CURSOR_MOVE = Qt.ClosedHandCursor
+CURSOR_GRAB = Qt.OpenHandCursor
 
 
 class Canvas(QWidget):
@@ -13,9 +22,15 @@ class Canvas(QWidget):
         self.__pixmap = QPixmap()
         self.__shapes = []
         self.__verified = False
+        self.scale = 1.0
+        self._painter = QPainter()
+        self._cursor = CURSOR_DEFAULT
 
         # Load string bundle for i18n
         self.__stringBundle = StringBundle.getBundle()
+
+        self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.WheelFocus)
 
     def loadPixmap(self, pixmap):
         self.pixmap = pixmap
