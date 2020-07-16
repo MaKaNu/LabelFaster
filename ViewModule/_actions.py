@@ -3,10 +3,11 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 from functools import partial
+from collections import Counter
 
-from libs.utils import *
+from libs.utils import newAction
 from libs.stringBundle import StringBundle
-from libs.errors import *
+from libs.errors import ClassesError
 
 # Load string bundle for i18n
 stringBundle = StringBundle.getBundle()
@@ -17,32 +18,48 @@ def getStr(strId):
 
 
 def get_quit(self):
-    action = partial(newAction, self)
-    quit = action(
+    quit = newAction(
+        self,
         getStr('quit'),
         self.close,
         'Ctrl+Q',
         'quit',
-        getStr('quitApp'))
+        getStr('quitFull'))
     return quit
 
 
 def get_open(self):
-    action = partial(newAction, self)
-    open = action(
+    open = newAction(
+        self,
         getStr('file'),
         self.openFile,
         'Ctrl+O',
         'folder',
-        getStr('openFile'))
+        getStr('fileFull'))
     return open
+
+
+def get_startlabel(self):
+    startlabel = newAction(
+        self,
+        getStr('start'),
+        self.setCreateMode,
+        'G',
+        'start',
+        getStr('startFull'))
+    return startlabel
 
 
 def create_classes(self):
     classes = self.labelHist
-    action = partial(newAction, self)
     if len(classes) > 20:
-        raise ClassesError(classes, self.__getStr('toomanyclassesE'))
+        raise ClassesError(
+            classes,
+            self.getStr('toomanyclassesE'))
+    if any(t > 1 for t in Counter(classes).values()):
+        raise ClassesError(
+            classes,
+            self.getStr('sameclassesE'))
     for classname in classes:
         if classes.index(classname) < 10:
             if classes.index(classname) == 9:
@@ -54,7 +71,8 @@ def create_classes(self):
                 shortcut = 'Ctrl+' + str(0)
             else:
                 shortcut = 'Ctrl+' + str(classes.index(classname) - 9)
-        classvar = action(
+        classvar = newAction(
+            self,
             classname,
             self.switchClass,
             shortcut,
