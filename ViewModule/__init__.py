@@ -81,8 +81,44 @@ class StartWindow(QMainWindow, WindowMixin):
         # Create ZoomWidget
         self.zoomWidget = ZoomWidget()
 
+        # ____   ___ ___ _    ___ _    ___ ___ _____    _____
+        #    /  | __|_ _| |  | __| |  |_ _/ __|_   _|  /     \
+        #   /   | _| | || |__| _|| |__ | |\__ \ | |   /       \
+        # __\   |_| |___|____|___|____|___|___/ |_|   \_______/
+
+        # Create FileListWidget
+        listLayout = QVBoxLayout()
+        listLayout.setContentsMargins(0, 0, 0, 0)
+
+        # Create and add a widget for showing current label items
+        self.labelList = QListWidget()
+        labelListContainer = QWidget()
+        labelListContainer.setLayout(listLayout)
+        # self.labelList.itemActivated.connect(self.labelSelectionChanged)
+        # self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
+        # self.labelList.itemDoubleClicked.connect(self.editLabel)
+        # Connect to itemChanged to detect checkbox changes.
+        # self.labelList.itemChanged.connect(self.labelItemChanged)
+        listLayout.addWidget(self.labelList)
+
+        self.boxDock = QDockWidget(getStr('boxLabelText'), self)
+        self.boxDock.setObjectName(getStr('labels'))
+        self.boxDock.setWidget(labelListContainer)
+
+        self.fileListWidget = QListWidget()
+        # self.fileListWidget.itemDoubleClicked.connect(self.fileitemDoubleClicked)
+        filelistLayout = QVBoxLayout()
+        filelistLayout.setContentsMargins(0, 0, 0, 0)
+        filelistLayout.addWidget(self.fileListWidget)
+        fileListContainer = QWidget()
+        fileListContainer.setLayout(filelistLayout)
+        self.fileDock = QDockWidget(getStr('fileList'), self)
+        self.fileDock.setObjectName(getStr('files'))
+        self.fileDock.setWidget(fileListContainer)
+
         # Create Canvas Widget
         self.__canvas = Canvas(parent=self)
+        self.canvas.setEnabled(False)
 
         # Create Central Widget
         scroll = QScrollArea()
