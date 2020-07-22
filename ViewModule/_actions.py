@@ -1,9 +1,11 @@
+import re
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 from functools import partial
 from collections import Counter
+from functools import partial
 
 from libs.utils import newAction
 from libs.stringBundle import StringBundle
@@ -48,6 +50,73 @@ def get_startlabel(self):
         'start',
         getStr('startFull'))
     return startlabel
+
+
+def get_zoomin(self):
+    zoomIn = newAction(
+        self,
+        getStr('zoomIn'),
+        partial(self.addZoom, 10),
+        'Ctrl++',
+        'zoom-in',
+        getStr('zoomInFull'),
+        enabled=False
+    )
+    return zoomIn
+
+
+def get_zoomout(self):
+    zoomOut = newAction(
+        self,
+        getStr('zoomOut'),
+        partial(self.addZoom, -10),
+        'Ctrl+-',
+        'zoom-out',
+        getStr('zoomOutFull'),
+        enabled=False
+    )
+    return zoomOut
+
+
+def get_zoomorg(self):
+    zoomOrg = newAction(
+        self,
+        getStr('zoomOrg'),
+        partial(self.setZoom, 100),
+        'Ctrl+=',
+        'zoom-org',
+        getStr('zoomOrgFull'),
+        enabled=False
+    )
+    return zoomOrg
+
+
+def get_fitwindow(self):
+    fitWindow = newAction(
+        self,
+        getStr('fitWin'),
+        self.setFitWindow,
+        'Ctrl+F',
+        'fit-window',
+        getStr('fitWinFull'),
+        checkable=True,
+        enabled=False
+    )
+    return fitWindow
+
+
+def get_fitwidth(self):
+    fitWindow = newAction(
+        self,
+        getStr('fitWidth'),
+        self.setFitWidth,
+        'Ctrl+Shift+F',
+        'fit-width',
+        getStr('fitWidthFull'),
+        checkable=True,
+        enabled=False
+    )
+    return fitWindow
 
 
 def create_classes(self):

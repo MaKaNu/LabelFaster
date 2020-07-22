@@ -148,15 +148,24 @@ class StartWindow(QMainWindow, WindowMixin):
         # __\  /_/ \_\___| |_| |___\___/|_|\_|___/  \_______/
 
         # Load Actions
+
+        # Manage File system
         quit = self.get_quit()
         open = self.get_open()
         start = self.get_startlabel()
 
+        # Manage Window Zoom
+        zoomIn = self.get_zoomin()
+        zoomOut = self.get_zoomout()
+        zoomOrg = self.get_zoomorg()
+        fitWindow = self.get_fitwindow()
+        fitWidth = self.get_fitwidth()
+
         # Store actions for further handling.
         self.actions = struct(
-            quit=quit,
-            open=open,
-            start=start,
+            quit=quit, open=open, zoomIn=zoomIn, zoomOut=zoomOut,
+            zoomOrg=zoomOrg, start=start, fitWindow=fitWindow,
+            fitWidth=fitWidth,
             fileMenuActions=(
                 open,
                 quit),
@@ -168,7 +177,9 @@ class StartWindow(QMainWindow, WindowMixin):
             beginnerContext=(),
             advancedContext=(),
             onLoadActive=(),
-            onShapesPresent=()
+            onShapesPresent=(),
+            zoomActions=(
+                self.zoomWidget, zoomIn, zoomOut, zoomOrg, fitWindow, fitWidth)
             )
 
         # Store class Actions
@@ -194,21 +205,23 @@ class StartWindow(QMainWindow, WindowMixin):
         addActions(self.menus.edit, (
             start,
         ))
+        addActions(self.menus.view, (
+            fitWindow, fitWidth
+        ))
+        # self.autoSaving,
+        # self.singleClassMode,
+        # self.displayLabelOption,
+        # labels, advancedMode, None,
+        # hideAll, showAll, None,
+        # zoomIn, zoomOut, zoomOrg, None,
         # addActions(self.menus.help, (help, showInfo))
-        # addActions(self.menus.view, (
-        #     self.autoSaving,
-        #     self.singleClassMode,
-        #     self.displayLabelOption,
-        #     labels, advancedMode, None,
-        #     hideAll, showAll, None,
-        #     zoomIn, zoomOut, zoomOrg, None,
-        #     fitWindow, fitWidth))
 
         # Create Toolbars
         self.tools = self.toolbar('Tools', position='left')
         self.classtools = self.toolbar('Classes', position='top')
         self.actions.beginner = (
-            open, None, start, quit
+            open, None, start, None, zoomIn, zoomOrg, zoomOut, fitWindow,
+            fitWidth, None,  quit
             )
 
         self.actions.classes = self.get_classes()
@@ -243,14 +256,44 @@ class StartWindow(QMainWindow, WindowMixin):
         self.resize(size)
         self.move(position)
 
+        self.zoomWidget.valueChanged.connect(self.paintCanvas)
+
     ###########################################################################
     #                       I M P O R T   M E T H O D S                       #
     ###########################################################################
 
     from ._actions import get_open, get_quit, create_classes, get_classes,\
-        get_startlabel
+        get_startlabel, get_zoomin, get_zoomout, get_zoomorg, get_fitwindow,\
+        get_fitwidth
     from ._filehandler import openFile, loadFile
     from ._events import status
+
+    ###########################################################################
+    #                        A C T I O N M E T H O D S                        #
+    ###########################################################################
+    def setCreateMode(self):
+        self.toggleDrawMode(False)
+
+    def setZoom(self, value):
+        self.actions.fitWidth.setChecked(False)
+        self.actions.fitWindow.setChecked(False)
+        self.zoomMode = self.MANUAL_ZOOM
+        self.zoomWidget.setValue(value)
+
+    def addZoom(self, increment=10):
+        self.setZoom(self.zoomWidget.value() + increment)
+
+    def setFitWindow(self, value=True):
+        if value:
+            self.actions.fitWidth.setChecked(False)
+        self.zoomMode = self.FIT_WINDOW if value else self.MANUAL_ZOOM
+        self.adjustScale()
+
+    def setFitWidth(self, value=True):
+        if value:
+            self.actions.fitWindow.setChecked(False)
+        self.zoomMode = self.FIT_WIDTH if value else self.MANUAL_ZOOM
+        self.adjustScale()
 
     ###########################################################################
     #                              M E T H O D S                              #
