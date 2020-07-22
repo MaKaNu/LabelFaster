@@ -84,7 +84,7 @@ def loadFile(self, filePath=None):
         self.adjustScale(initial=True)
         self.paintCanvas()
         # self.addRecentFile(self.filePath)
-        # self.toggleActions(True)
+        self.toggleActions(True)
 
         # Label xml file and show bound box according to its filename
         # if self.usingPascalVocFormat is True:

@@ -295,6 +295,18 @@ class StartWindow(QMainWindow, WindowMixin):
         self.zoomMode = self.FIT_WIDTH if value else self.MANUAL_ZOOM
         self.adjustScale()
 
+    def switchClass(self):
+        name = self.sender().toolTip()
+        getattr(self.classes, name).setIcon(newIcon('green'))
+        if (
+                self.classes.activeClass is not None and
+                not self.classes.activeClass == name):
+            getattr(
+                self.classes,
+                self.classes.activeClass
+                ).setIcon(newIcon('red'))
+        setattr(self.classes, 'activeClass', name)
+
     ###########################################################################
     #                              M E T H O D S                              #
     ###########################################################################
@@ -331,18 +343,6 @@ class StartWindow(QMainWindow, WindowMixin):
         self.canvas.scale = 0.01 * self.zoomWidget.value()
         self.canvas.adjustSize()
         self.canvas.update()
-
-    def switchClass(self):
-        name = self.sender().toolTip()
-        getattr(self.classes, name).setIcon(newIcon('green'))
-        if (
-                self.classes.activeClass is not None and
-                not self.classes.activeClass == name):
-            getattr(
-                self.classes,
-                self.classes.activeClass
-                ).setIcon(newIcon('red'))
-        setattr(self.classes, 'activeClass', name)
 
     def __loadPredefinedClasses(self, predefClassesFile):
         if Path(predefClassesFile).exists():
