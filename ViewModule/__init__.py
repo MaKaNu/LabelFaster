@@ -354,11 +354,16 @@ class StartWindow(QMainWindow, WindowMixin):
                     else:
                         self.labelHist.append(line)
 
-    def setCreateMode(self):
-        self.toggleDrawMode(False)
-
     def toggleDrawMode(self, edit=True):
         self.canvas.setEditing(edit)
+
+    def toggleActions(self, value=True):
+        """Enable/Disable widgets which depend on an opened image."""
+        for z in self.actions.zoomActions:
+            if z is not None:
+                z.setEnabled(value)
+        # for action in self.actions.onLoadActive:
+        #     action.setEnabled(value)
 
     ###########################################################################
     #                               G E T T E R                               #
