@@ -16,10 +16,13 @@ CURSOR_GRAB = Qt.OpenHandCursor
 
 
 class Canvas(QWidget):
+    CREATE, EDIT = list(range(2))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__pixmap = QPixmap()
+        self.__mode = self.EDIT
+        self.__current = None
         self.__shapes = []
         self.__verified = False
         self.scale = 1.0
@@ -43,6 +46,12 @@ class Canvas(QWidget):
 
     def setEditing(self, value=True):
         self.mode = self.EDIT if value else self.CREATE
+
+    def drawing(self):
+        return self.mode == self.CREATE
+
+    def editing(self):
+        return self.mode == self.EDIT
 
     ###########################################################################
     #                                P O S E S                                #
@@ -105,6 +114,31 @@ class Canvas(QWidget):
             self.parent().window().labelCoordinates.setText(
                 'X: %d; Y: %d' % (pos.x(), pos.y()))
 
+        # Polygon drawing.
+        if self.drawing():
+            self.overrideCursor(CURSOR_DRAW)
+            if self.current:
+                # Display annotation width and height while drawing
+                currentWidth = abs(self.current[0].x() - pos.x())
+                currentHeight = abs(self.current[0].y() - pos.y())
+                self.parent().window().labelCoordinates.setText(
+                        'Width: %d, Height: %d / X: %d; Y: %d' % (
+                            currentWidth,
+                            currentHeight,
+                            pos.x(), pos.y()))
+
+        # Action if left button and controll are set
+        # needs to be implemented.
+        if Qt.LeftButton & ev.buttons()\
+                and Qt.ControlModifier & ev.modifiers():
+            pass
+
+        # Action if right button and controll are set
+        # needs to be implemented.
+        if Qt.RightButton & ev.buttons()\
+                and Qt.ControlModifier & ev.modifiers():
+            pass
+
     def paintEvent(self, event):
         if not self.pixmap:
             return super(Canvas, self).paintEvent(event)
@@ -125,7 +159,8 @@ class Canvas(QWidget):
 
         Shape.scale = self.scale
         for shape in self.shapes:
-            if (shape.selected or not self._hideBackround) and self.isVisible(shape):
+            if (shape.selected or not self._hideBackround) \
+                    and self.isVisible(shape):
                 shape.fill = shape.selected or shape == self.hShape
                 shape.paint(p)
         # #^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^# #
@@ -149,15 +184,21 @@ class Canvas(QWidget):
     def __getShapes(self):
         return self.__shapes
 
+    def __getMode(self):
+        return self.__mode
+
+    def __getCurrent(self):
+        return self.__current
+
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
 
     def __setVerified(self, x):
-        if type(x) == bool:
+        if isinstance(x, bool):
             self.__verified = x
         else:
-            raise ValueError(x, self.__getStr('boolE'))
+            raise ValueError(x, self.__getStr('verifiedE'))
 
     def __setPixmap(self, x):
         if isinstance(x, QPixmap):
@@ -168,6 +209,18 @@ class Canvas(QWidget):
     def __setShapes(self, x):
         self.__shapes = x
 
+    def __setMode(self, x):
+        if isinstance(x, int) and x == 1 or x == 0:
+            self.__mode = x
+        else:
+            raise ValueError(x, self.__getStr('modeE'))
+
+    def __setCurrent(self, x):
+        if isinstance(x, Shape):
+            self.__mode = x
+        else:
+            raise ValueError(x, self.__getStr('currentE'))
+
     ###########################################################################
     #                           P R O P E R T I E S                           #
     ###########################################################################
@@ -175,3 +228,5 @@ class Canvas(QWidget):
     verified = property(__getVerified, __setVerified)
     pixmap = property(__getPixmap, __setPixmap)
     shapes = property(__getShapes, __setShapes)
+    mode = property(__getMode, __setMode)
+    current = property(__getCurrent, __setCurrent)
