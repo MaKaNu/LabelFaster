@@ -155,6 +155,7 @@ class StartWindow(QMainWindow, WindowMixin):
         start = self.get_startlabel()
 
         # Manage Window Zoom
+        zoom = self.get_zoom()
         zoomIn = self.get_zoomin()
         zoomOut = self.get_zoomout()
         zoomOrg = self.get_zoomorg()
@@ -163,7 +164,7 @@ class StartWindow(QMainWindow, WindowMixin):
 
         # Store actions for further handling.
         self.actions = struct(
-            quit=quit, open=open, zoomIn=zoomIn, zoomOut=zoomOut,
+            quit=quit, open=open, zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut,
             zoomOrg=zoomOrg, start=start, fitWindow=fitWindow,
             fitWidth=fitWidth,
             fileMenuActions=(
@@ -206,7 +207,7 @@ class StartWindow(QMainWindow, WindowMixin):
             start,
         ))
         addActions(self.menus.view, (
-            fitWindow, fitWidth
+            zoomIn, zoomOut, zoomOrg, None, fitWindow, fitWidth
         ))
         # self.autoSaving,
         # self.singleClassMode,
@@ -220,7 +221,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.tools = self.toolbar('Tools', position='left')
         self.classtools = self.toolbar('Classes', position='top')
         self.actions.beginner = (
-            open, None, start, None, zoomIn, zoomOrg, zoomOut, fitWindow,
+            open, None, start, None, zoomIn, zoom, zoomOrg, zoomOut, fitWindow,
             fitWidth, None,  quit
             )
 
@@ -263,8 +264,8 @@ class StartWindow(QMainWindow, WindowMixin):
     ###########################################################################
 
     from ._actions import get_open, get_quit, create_classes, get_classes,\
-        get_startlabel, get_zoomin, get_zoomout, get_zoomorg, get_fitwindow,\
-        get_fitwidth
+        get_startlabel, get_zoom,  get_zoomin, get_zoomout, get_zoomorg,\
+        get_fitwindow, get_fitwidth
     from ._filehandler import openFile, loadFile
     from ._events import status
 

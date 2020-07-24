@@ -46,6 +46,10 @@ def addActions(widget, actions):
 def distance(p):
     return sqrt(p.x() * p.x() + p.y() * p.y())
 
+def fmtShortcut(text):
+    mod, key = text.split('+', 1)
+    return '<b>%s</b>+<b>%s</b>' % (mod, key)
+
 
 class struct(object):
 

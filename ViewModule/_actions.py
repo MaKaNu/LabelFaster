@@ -7,7 +7,7 @@ from functools import partial
 from collections import Counter
 from functools import partial
 
-from libs.utils import newAction
+from libs.utils import newAction, fmtShortcut
 from libs.stringBundle import StringBundle
 from libs.errors import ClassesError
 
@@ -50,6 +50,17 @@ def get_startlabel(self):
         'start',
         getStr('startFull'))
     return startlabel
+
+
+def get_zoom(self):
+    zoom = QWidgetAction(self)
+    zoom.setDefaultWidget(self.zoomWidget)
+    self.zoomWidget.setWhatsThis(
+        u"Zoom in or out of the image. Also accessible with"
+        " %s and %s from the canvas." % (fmtShortcut("Ctrl+[-+]"),
+                                         fmtShortcut("Ctrl+Wheel")))
+    self.zoomWidget.setEnabled(False)
+    return zoom
 
 
 def get_zoomin(self):
