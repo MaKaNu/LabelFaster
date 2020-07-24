@@ -2,19 +2,6 @@ sand
 soil
 bedrock
 big rocks
-berg1
-berg2
-berg3
-berg4
-berg5
-berg6
-berg7
-berg8
-berg9
-berg10
-berg11
-berg12
-berg13
-berg14
-berg15
-berg16
+sky
+robot
+Schokokuchen

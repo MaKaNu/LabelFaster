@@ -16,7 +16,11 @@ CURSOR_GRAB = Qt.OpenHandCursor
 
 
 class Canvas(QWidget):
+    drawingPolygon = pyqtSignal(bool)
+
     CREATE, EDIT = list(range(2))
+
+    epsilon = 11.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,6 +28,10 @@ class Canvas(QWidget):
         self.__mode = self.EDIT
         self.__current = None
         self.__shapes = []
+        self.__drawingLineColor = QColor(0, 0, 255)
+        self.__drawingRectColor = QColor(0, 0, 255)
+        self.__line = Shape(line_color=self.drawingLineColor)
+        self.__selectedShape = None
         self.__verified = False
         self.scale = 1.0
         self._painter = QPainter()
@@ -95,6 +103,41 @@ class Canvas(QWidget):
         return not (0 <= p.x() <= w and 0 <= p.y() <= h)
 
     ###########################################################################
+    #                              D R A W I N G                              #
+    ###########################################################################
+
+    def handleDrawing(self, pos):
+        if self.current and self.current.reachMaxPoints() is False:
+            initPos = self.current[0]
+            minX = initPos.x()
+            minY = initPos.y()
+            targetPos = self.line[1]
+            maxX = targetPos.x()
+            maxY = targetPos.y()
+            self.current.addPoint(QPointF(maxX, minY))
+            self.current.addPoint(targetPos)
+            self.current.addPoint(QPointF(minX, maxY))
+            self.finalise()
+        elif not self.outOfPixmap(pos):
+            self.current = Shape()
+            self.current.addPoint(pos)
+            self.line.points = [pos, pos]
+            # self.setHiding()
+            self.drawingPolygon.emit(True)
+            self.update()
+
+    # def setHiding(self, enable=True):
+        # self._hideBackround = self.hideBackround if enable else False
+
+    def finalise(self):
+        assert self.current
+        if self.current.points[0] == self.current.points[-1]:
+            self.current = None
+            self.drawingPolygon.emit(False)
+            self.update()
+            return
+
+    ###########################################################################
     #                               E V E N T S                               #
     ###########################################################################
 
@@ -127,6 +170,70 @@ class Canvas(QWidget):
                             currentHeight,
                             pos.x(), pos.y()))
 
+                color = self.drawingLineColor
+                if self.outOfPixmap(pos):
+                    # Don't allow the user to draw outside the pixmap.
+                    # Clip the coordinates to 0 or max,
+                    # if they are outside the range [0, max]
+                    size = self.pixmap.size()
+                    clipped_x = min(max(0, pos.x()), size.width())
+                    clipped_y = min(max(0, pos.y()), size.height())
+                    pos = QPointF(clipped_x, clipped_y)
+                elif len(self.current) > 1 and \
+                        self.closeEnough(pos, self.current[0]):
+                    # Attract line to starting point and colorise to alert the
+                    # user:
+                    pos = self.current[0]
+                    color = self.current.line_color
+                    self.overrideCursor(CURSOR_POINT)
+                    self.current.highlightVertex(0, Shape.NEAR_VERTEX)
+
+                # if self.drawSquare:
+                if False:
+                    initPos = self.current[0]
+                    minX = initPos.x()
+                    minY = initPos.y()
+                    min_size = min(abs(pos.x() - minX), abs(pos.y() - minY))
+                    directionX = -1 if pos.x() - minX < 0 else 1
+                    directionY = -1 if pos.y() - minY < 0 else 1
+                    self.line[1] = QPointF(
+                        minX + directionX * min_size,
+                        minY + directionY * min_size)
+                else:
+                    self.line[1] = pos
+
+                self.line.line_color = color
+                self.prevPoint = QPointF()
+                self.current.highlightClear()
+            else:
+                self.prevPoint = pos
+            self.repaint()
+            return
+
+        # Polygon copy moving.
+        if Qt.RightButton & ev.buttons():
+            if self.selectedShapeCopy and self.prevPoint:
+                self.overrideCursor(CURSOR_MOVE)
+                self.boundedMoveShape(self.selectedShapeCopy, pos)
+                self.repaint()
+            elif self.selectedShape:
+                self.selectedShapeCopy = self.selectedShape.copy()
+                self.repaint()
+            return
+
+        # Polygon/Vertex moving.
+        if Qt.LeftButton & ev.buttons():
+            if self.selectedVertex():
+                self.boundedMoveVertex(pos)
+                self.shapeMoved.emit()
+                self.repaint()
+            elif self.selectedShape and self.prevPoint:
+                self.overrideCursor(CURSOR_MOVE)
+                self.boundedMoveShape(self.selectedShape, pos)
+                self.shapeMoved.emit()
+                self.repaint()
+            return
+
         # Action if left button and controll are set
         # needs to be implemented.
         if Qt.LeftButton & ev.buttons()\
@@ -138,6 +245,38 @@ class Canvas(QWidget):
         if Qt.RightButton & ev.buttons()\
                 and Qt.ControlModifier & ev.modifiers():
             pass
+
+    def mousePressEvent(self, ev):
+        pos = self.transformPos(ev.pos())
+
+        if Qt.LeftButton & ev.buttons():
+            if self.drawing():
+                self.handleDrawing(pos)
+            else:
+                self.selectShapePoint(pos)
+                self.prevPoint = pos
+                self.repaint()
+        else:
+            pass
+
+    def mouseReleaseEvent(self, ev):
+        if Qt.RightButton == ev.button():
+            menu = self.menus[bool(self.selectedShapeCopy)]
+            self.restoreCursor()
+            if not menu.exec_(self.mapToGlobal(ev.pos()))\
+               and self.selectedShapeCopy:
+                # Cancel the move by deleting the shadow copy.
+                self.selectedShapeCopy = None
+                self.repaint()
+        elif Qt.LeftButton == ev.button() and self.selectedShape:
+            if self.selectedVertex():
+                self.overrideCursor(CURSOR_POINT)
+            else:
+                self.overrideCursor(CURSOR_GRAB)
+        elif Qt.LeftButton == ev.button():
+            pos = self.transformPos(ev.pos())
+            if self.drawing():
+                self.handleDrawing(pos)
 
     def paintEvent(self, event):
         if not self.pixmap:
@@ -163,6 +302,42 @@ class Canvas(QWidget):
                     and self.isVisible(shape):
                 shape.fill = shape.selected or shape == self.hShape
                 shape.paint(p)
+        if self.current:
+            self.current.paint(p)
+            self.line.paint(p)
+        # if self.selectedShapeCopy:
+            # self.selectedShapeCopy.paint(p)
+
+        # Paint rect
+        if self.current is not None and len(self.line) == 2:
+            leftTop = self.line[0]
+            rightBottom = self.line[1]
+            rectWidth = rightBottom.x() - leftTop.x()
+            rectHeight = rightBottom.y() - leftTop.y()
+            p.setPen(self.drawingRectColor)
+            brush = QBrush(Qt.BDiagPattern)
+            p.setBrush(brush)
+            p.drawRect(leftTop.x(), leftTop.y(), rectWidth, rectHeight)
+
+        if self.drawing() and not self.prevPoint.isNull() \
+                and not self.outOfPixmap(self.prevPoint):
+            p.setPen(QColor(0, 0, 0))
+            p.drawLine(
+                self.prevPoint.x(), 0,
+                self.prevPoint.x(), self.pixmap.height())
+            p.drawLine(
+                0, self.prevPoint.y(),
+                self.pixmap.width(), self.prevPoint.y())
+
+        self.setAutoFillBackground(True)
+        if self.verified:
+            pal = self.palette()
+            pal.setColor(self.backgroundRole(), QColor(184, 239, 38, 128))
+            self.setPalette(pal)
+        else:
+            pal = self.palette()
+            pal.setColor(self.backgroundRole(), QColor(232, 232, 232, 255))
+            self.setPalette(pal)
         # #^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^# #
         # ---------------------------- end paint ---------------------------- #
         # #^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^^vv^# #
@@ -189,6 +364,15 @@ class Canvas(QWidget):
 
     def __getCurrent(self):
         return self.__current
+
+    def __getLine(self):
+        return self.__line
+
+    def __getDrawingLineColor(self):
+        return self.__drawingLineColor
+
+    def __getDrawingRectColor(self):
+        return self.__drawingRectColor
 
     ###########################################################################
     #                               S E T T E R                               #
@@ -217,9 +401,27 @@ class Canvas(QWidget):
 
     def __setCurrent(self, x):
         if isinstance(x, Shape):
-            self.__mode = x
+            self.__current = x
         else:
             raise ValueError(x, self.__getStr('currentE'))
+
+    def __setLine(self, x):
+        if isinstance(x, Shape):
+            self.__line = x
+        else:
+            raise ValueError(x, self.__getStr('lineE'))
+
+    def __setdrawingLineColor(self, x):
+        if isinstance(x, QColor):
+            self.__drawingLineColor = x
+        else:
+            raise ValueError(x, self.__getStr('drawlinecolorE'))
+
+    def __setdrawingRectColor(self, x):
+        if isinstance(x, QColor):
+            self.__drawingRectColor = x
+        else:
+            raise ValueError(x, self.__getStr('drawrectcolorE'))
 
     ###########################################################################
     #                           P R O P E R T I E S                           #
@@ -230,3 +432,6 @@ class Canvas(QWidget):
     shapes = property(__getShapes, __setShapes)
     mode = property(__getMode, __setMode)
     current = property(__getCurrent, __setCurrent)
+    line = property(__getLine, __setLine)
+    drawingLineColor = property(__getDrawingLineColor, __setdrawingLineColor)
+    drawingRectColor = property(__getDrawingRectColor, __setdrawingRectColor)

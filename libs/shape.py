@@ -33,7 +33,12 @@ class Shape(object):
     point_size = 8
     scale = 1.0
 
-    def __init__(self, label=None, line_color=None, difficult=False, paintLabel=False):
+    def __init__(
+            self,
+            label=None,
+            line_color=None,
+            difficult=False,
+            paintLabel=False):
         self.label = label
         self.points = []
         self.fill = False
@@ -81,7 +86,8 @@ class Shape(object):
 
     def paint(self, painter):
         if self.points:
-            color = self.select_line_color if self.selected else self.line_color
+            color = self.select_line_color if self.selected \
+                else self.line_color
             pen = QPen(color)
             # Try using integer sizes for smoother drawing(?)
             pen.setWidth(max(1, int(round(2.0 / self.scale))))
@@ -118,14 +124,15 @@ class Shape(object):
                     font.setPointSize(8)
                     font.setBold(True)
                     painter.setFont(font)
-                    if(self.label == None):
+                    if self.label is None:
                         self.label = ""
                     if(min_y < MIN_Y_LABEL):
                         min_y += MIN_Y_LABEL
                     painter.drawText(min_x, min_y, self.label)
 
             if self.fill:
-                color = self.select_fill_color if self.selected else self.fill_color
+                color = self.select_fill_color if self.selected \
+                    else self.fill_color
                 painter.fillPath(line_path, color)
 
     def drawVertex(self, path, i):
