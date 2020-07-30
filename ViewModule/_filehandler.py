@@ -2,18 +2,21 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
-from libs.labelFile import LabelFile
-from libs.pascal_io import PascalVocReader
-from libs.pascal_io import XML_EXT
-from libs.yolo_io import YoloReader
-from libs.yolo_io import TXT_EXT
+from libs.labelFile import LabelFile, LabelFileError
+from libs.utils import natural_sort
+from libs.pascal_io import PascalVocReader, XML_EXT
+from libs.yolo_io import YoloReader, TXT_EXT
+from libs.boxsup_io import BOXSUPReader, PNG_EXT
+
+from libs.messages import discardChangesDialog
+from libs.constants import *
 
 import os
 import codecs
 
 
 def openFile(self):
-    path = os.path.dirname(self.path) if self.path else '.'
+    path = os.path.dirname(self.filePath) if self.filePath else '.'
     formats = [
         '*.%s' % fmt.data().decode("ascii").lower()
         for fmt in QImageReader.supportedImageFormats()]
@@ -29,6 +32,112 @@ def openFile(self):
         self.loadFile(filename)
     elif filename[0] == '':
         pass  # Set a variable later to stop throwing the wrong datatype message
+
+
+def openFolder(self, silent=False):
+    if not self.mayContinue():
+        return
+
+    if self.lastOpenFolder and os.path.exists(self.lastOpenFolder):
+        defaultOpenDirPath = self.lastOpenDir
+    else:
+        defaultOpenDirPath = os.path.dirname(self.filePath) \
+            if self.filePath else '.'
+    if not silent:
+        targetDirPath = QFileDialog.getExistingDirectory(
+            self,
+            '%s - Open Directory' % self.appname,
+            defaultOpenDirPath,
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
+    else:
+        targetDirPath = defaultOpenDirPath
+
+    self.importFolderImgs(targetDirPath)
+
+
+def importFolderImgs(self, dirpath):
+    if not self.mayContinue() or not dirpath:
+        return
+
+    self.lastOpenDir = dirpath
+    self.dirname = dirpath
+    self.filePath = None
+    self.fileListWidget.clear()
+    self.mImgList = self.scanAllImages(dirpath)
+    self.openNextImg()
+    for imgPath in self.mImgList:
+        item = QListWidgetItem(imgPath)
+        self.fileListWidget.addItem(item)
+
+
+def scanAllImages(self, folderPath):
+    extensions = [
+        '.%s' % fmt.data().decode("ascii").lower()
+        for fmt in QImageReader.supportedImageFormats()]
+    images = []
+
+    for root, _, files in os.walk(folderPath):
+        for file in files:
+            if file.lower().endswith(tuple(extensions)):
+                relativePath = os.path.join(root, file)
+                path = os.path.abspath(relativePath)
+                images.append(path)
+    natural_sort(images, key=lambda x: x.lower())
+    return images
+
+
+def openPrevImg(self, _value=False):
+    # Proceding prev image without dialog if having any label
+    if self.autoSaving.isChecked():
+        if self.defaultSaveDir is not None:
+            if self.dirty is True:
+                self.saveFile()
+        else:
+            self.changeSavedirDialog()
+            return
+
+    if not self.mayContinue():
+        return
+
+    if len(self.mImgList) <= 0:
+        return
+
+    if self.filePath is None:
+        return
+
+    currIndex = self.mImgList.index(self.filePath)
+    if currIndex - 1 >= 0:
+        filename = self.mImgList[currIndex - 1]
+        if filename:
+            self.loadFile(filename)
+
+
+def openNextImg(self, _value=False):
+    # Proceding prev image without dialog if having any label
+    if self.actions.autosaving.isChecked():
+        if self.defaultSaveDir is not None:
+            if self.dirty is True:
+                self.saveFile()
+        else:
+            self.changeSavedirDialog()
+            return
+
+    if not self.mayContinue():
+        return
+
+    if len(self.mImgList) <= 0:
+        return
+
+    filename = None
+    if self.filePath is None:
+        filename = self.mImgList[0]
+    else:
+        currIndex = self.mImgList.index(self.filePath)
+        if currIndex + 1 < len(self.mImgList):
+            filename = self.mImgList[currIndex + 1]
+
+    if filename:
+        self.loadFile(filename)
 
 
 def loadFile(self, filePath=None):
@@ -79,7 +188,7 @@ def loadFile(self, filePath=None):
         self.canvas.loadPixmap(QPixmap.fromImage(image))
         if self.labelFile:
             self.loadLabels(self.labelFile.shapes)
-        self.setClean()
+        self.dirty = False
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
         self.paintCanvas()
@@ -121,6 +230,132 @@ def loadFile(self, filePath=None):
     return False
 
 
+def changeSaveFolderDialog(self, _value=False):
+    if self.defaultSaveDir is not None:
+        path = self.defaultSaveDir
+    else:
+        path = '.'
+
+    dirpath = QFileDialog.getExistingDirectory(
+        self,
+        '%s - Save annotations to the directory' % self.appname,
+        path,
+        QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
+
+    if dirpath is not None and len(dirpath) > 1:
+        self.defaultSaveDir = dirpath
+
+    self.statusBar().showMessage(
+        '%s . Annotation will be saved to %s' %
+        ('Change saved folder', self.defaultSaveDir))
+    self.statusBar().show()
+
+
+def saveFile(self, _value=False):
+    if self.defaultSaveDir is not None and len(self.defaultSaveDir):
+        if self.filePath:
+            imgFileName = os.path.basename(self.filePath)
+            savedFileName = os.path.splitext(imgFileName)[0]
+            savedPath = os.path.join(self.defaultSaveDir, savedFileName)
+            self._saveFile(savedPath)
+    else:
+        imgFileDir = os.path.dirname(self.filePath)
+        imgFileName = os.path.basename(self.filePath)
+        savedFileName = os.path.splitext(imgFileName)[0]
+        savedPath = os.path.join(imgFileDir, savedFileName)
+        self.selectSaveFile(
+            savedPath if self.labelFile
+            else self.saveFileDialog(removeExt=False))
+
+
+def saveFileDialog(self, removeExt=True):
+    caption = '%s - Choose File' % self.appname
+    filters = 'File (*%s)' % LabelFile.suffix
+    openDialogPath = self.currentPath()
+    dlg = QFileDialog(self, caption, openDialogPath, filters)
+    dlg.setDefaultSuffix(LabelFile.suffix[1:])
+    dlg.setAcceptMode(QFileDialog.AcceptSave)
+    filenameWithoutExtension = os.path.splitext(self.filePath)[0]
+    dlg.selectFile(filenameWithoutExtension)
+    dlg.setOption(QFileDialog.DontUseNativeDialog, False)
+    if dlg.exec_():
+        fullFilePath = dlg.selectedFiles()[0]
+        if removeExt:
+            # Return file path without the extension.
+            return os.path.splitext(fullFilePath)[0]
+        else:
+            return fullFilePath
+    return ''
+
+
+def selectSaveFile(self, annotationFilePath):
+    if annotationFilePath and self.saveLabels(annotationFilePath):
+        self.dirty = False
+        self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
+        self.statusBar().show()
+
+
+def saveLabels(self, annotationFilePath):
+    annotationFilePath = annotationFilePath
+    if self.labelFile is None:
+        self.labelFile = LabelFile()
+        self.labelFile.verified = self.canvas.verified
+
+    def format_shape(s):
+        return dict(
+            label=s.label,
+            line_color=s.line_color.getRgb(),
+            fill_color=s.fill_color.getRgb(),
+            points=[(p.x(), p.y()) for p in s.points]
+            )
+
+    shapes = [format_shape(shape) for shape in self.canvas.shapes]
+    # Can add differrent annotation formats here
+    try:
+        if self.usePascalVocFormat is True:
+            if annotationFilePath[-4:].lower() != ".xml":
+                annotationFilePath += XML_EXT
+            self.labelFile.savePascalVocFormat(
+                annotationFilePath,
+                shapes,
+                self.filePath,
+                self.imageData,
+                self.lineColor.getRgb(),
+                self.fillColor.getRgb())
+        elif self.useYoloFormat is True:
+            if annotationFilePath[-4:].lower() != ".txt":
+                annotationFilePath += TXT_EXT
+            self.labelFile.saveYoloFormat(
+                annotationFilePath,
+                shapes,
+                self.filePath,
+                self.imageData,
+                self.labelHist,
+                self.lineColor.getRgb(),
+                self.fillColor.getRgb())
+        elif self.useBoxSupFormat is True:
+            if annotationFilePath[-4:].lower() != ".png":
+                annotationFilePath += PNG_EXT
+            self.labelFile.saveBoxSupFormat(
+                annotationFilePath,
+                shapes,
+                self.filePath,
+                self.imageData,
+                self.labelHist,
+                self.lineColor.getRgb(),
+                self.fillColor.getRgb())
+        else:
+            self.labelFile.save(
+                annotationFilePath, shapes, self.filePath, self.imageData,
+                self.lineColor.getRgb(), self.fillColor.getRgb())
+        print('Image:{0} -> Annotation:{1}'.format(
+            self.filePath, annotationFilePath))
+        return True
+    except LabelFileError as e:
+        self.errorMessage(u'Error saving label data', u'<b>%s</b>' % e)
+        return False
+
+
 def loadPredefinedClasses(self, predefClassesFile):
     if predefClassesFile.exists():
         with codecs.open(predefClassesFile, 'r', 'utf8') as f:
@@ -130,6 +365,22 @@ def loadPredefinedClasses(self, predefClassesFile):
                     self.labelHist = [line]
                 else:
                     self.labelHist.append(line)
+
+
+def fileitemDoubleClicked(self, item=None):
+    currIndex = self.mImgList.index(item.text())
+    if currIndex < len(self.mImgList):
+        filename = self.mImgList[currIndex]
+        if filename:
+            self.loadFile(filename)
+
+
+def mayContinue(self):
+    return not (self.dirty and not discardChangesDialog(self))
+
+
+def currentPath(self):
+    return os.path.dirname(self.filePath) if self.filePath else '.'
 
 
 def read(filename, default=None):
