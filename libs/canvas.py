@@ -336,13 +336,14 @@ class Canvas(QWidget):
 
     def mouseReleaseEvent(self, ev):
         if Qt.RightButton == ev.button():
-            menu = self.menus[bool(self.selectedShapeCopy)]
-            self.restoreCursor()
-            if not menu.exec_(self.mapToGlobal(ev.pos()))\
-               and self.selectedShapeCopy:
-                # Cancel the move by deleting the shadow copy.
-                self.selectedShapeCopy = None
-                self.repaint()
+            # menu = self.menus[bool(self.selectedShapeCopy)]
+            # self.restoreCursor()
+            # if not menu.exec_(self.mapToGlobal(ev.pos()))\
+            #    and self.selectedShapeCopy:
+            #     # Cancel the move by deleting the shadow copy.
+            #     self.selectedShapeCopy = None
+            #     self.repaint()
+            pass
         elif Qt.LeftButton == ev.button() and self.selectedShape:
             if self.selectedVertex():
                 self.overrideCursor(CURSOR_POINT)
