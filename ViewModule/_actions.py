@@ -10,6 +10,8 @@ from functools import partial
 from libs.utils import newAction, fmtShortcut
 from libs.stringBundle import StringBundle
 from libs.errors import ClassesError
+from libs.settings import Settings
+from libs.constants import *
 
 # Load string bundle for i18n
 stringBundle = StringBundle.getBundle()
@@ -41,6 +43,17 @@ def get_open(self):
     return open
 
 
+def get_openfolder(self):
+    openfolder = newAction(
+        self,
+        getStr('folder'),
+        self.openFolder,
+        'Ctrl+Shift+O',
+        'folder',
+        getStr('folderFull'))
+    return openfolder
+
+
 def get_startlabel(self):
     startlabel = newAction(
         self,
@@ -50,6 +63,50 @@ def get_startlabel(self):
         'start',
         getStr('startFull'))
     return startlabel
+
+
+def get_save(self):
+    save = newAction(
+        self,
+        getStr('save'),
+        self.saveFile,
+        'Ctrl+s',
+        'save',
+        getStr('saveFull'),
+        enabled=False)
+    return save
+
+
+def get_changesavefolder(self):
+    changesavefolder = newAction(
+        self,
+        getStr('changeSaveFolder'),
+        self.changeSaveFolderDialog,
+        'Ctrl+Alt+s',
+        'folder')
+    return changesavefolder
+
+
+def get_saveformat(self):
+    saveformat = newAction(
+        self,
+        getStr('PascalVOC'),
+        self.changeFormat,
+        'Ctrl+',
+        'format_voc',
+        getStr('saveformatFull'),
+        enabled=True)
+    return saveformat
+
+
+def get_autosaving(self):
+    autosaving = newAction(
+        self,
+        getStr('autoSave'),
+        icon='savemode')
+    autosaving.setCheckable(True)
+    autosaving.setChecked(self.settings.get(SETTING_AUTO_SAVE, False))
+    return autosaving
 
 
 def get_zoom(self):
