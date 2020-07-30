@@ -1,3 +1,4 @@
+from os import DirEntry
 from pathlib import Path
 import codecs
 
@@ -11,9 +12,14 @@ from libs.constants import *
 from libs.stringBundle import StringBundle
 from libs.toolBar import ToolBar
 from libs.canvas import Canvas
+from libs.shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
 from libs.zoomWidget import ZoomWidget
 from libs.settings import Settings
 from libs.errors import *
+from libs.labelFile import LabelFile
+from libs.yolo_io import TXT_EXT
+from libs.pascal_io import XML_EXT
+from libs.boxsup_io import PNG_EXT
 
 
 class WindowMixin(object):
@@ -59,35 +65,53 @@ class StartWindow(QMainWindow, WindowMixin):
         # Standard QT Parameter
         self.title = 'ROISA - Region of Interest Selector Automat'
 
+        # Unsaved Status Flag
+        self.__dirty = False
+
         # For loading all image under a directory
-        self.mImgList = []
-        self.dirname = None
-        self.labelHist = []
-        self.lastOpenDir = None
+        self.__mImgList = []
+        self.__foldername = None
+        self.__labelHist = []
+
+        # Match Shapes and Labels
+        self.__itemsToShapes = {}
+        self.__shapesToItems = {}
+        self.__prevLabelText = ''
 
         # Application state.
+        self.__selectedClass = None
+
+        # File and path informations
         self.__image = QImage()
         self.__filePath = defaultFilename
+        self.__defaultSaveDir = defaultSaveDir
+        self.__lastOpenFolder = None
         self.__loadPredefinedClasses(defaultPredefClassFile)
+
+        # Application state
+        self.__lineColor = None
+        self.__fillColor = None
 
         # Load string bundle for i18n
         self.__stringBundle = StringBundle.getBundle()
         def getStr(strId): return self.__stringBundle.getString(strId)
 
-        # Save as Pascal voc xml
+        # Save as Format Flags
         self.__defaultSaveDir = defaultSaveDir
-        # self.usingPascalVocFormat = True
-        # self.usingYoloFormat = False
+        self.__usePascalVocFormat = True
+        self.__useYoloFormat = False
+        self.__useBoxSupFormat = False
 
         # ##############################WDIGETS############################## #
 
         # Create ZoomWidget
         self.zoomWidget = ZoomWidget()
 
-        # ____   ___ ___ _    ___ _    ___ ___ _____    _____
-        #    /  | __|_ _| |  | __| |  |_ _/ __|_   _|  /     \
-        #   /   | _| | || |__| _|| |__ | |\__ \ | |   /       \
-        # __\   |_| |___|____|___|____|___|___/ |_|   \_______/
+        # ____________________    __________       _____
+        # ___  ____/__(_)__  /_______  /__(_)________  /_
+        # __  /_   __  /__  /_  _ \_  /__  /__  ___/  __/
+        # _  __/   _  / _  / /  __/  / _  / _(__  )/ /_
+        # /_/      /_/  /_/  \___//_/  /_/  /____/ \__/
 
         # Create FileListWidget
         listLayout = QVBoxLayout()
@@ -108,8 +132,9 @@ class StartWindow(QMainWindow, WindowMixin):
         self.boxDock.setObjectName(getStr('labels'))
         self.boxDock.setWidget(labelListContainer)
 
-        self.fileListWidget = QListWidget()
-        # self.fileListWidget.itemDoubleClicked.connect(self.fileitemDoubleClicked)
+        self.__fileListWidget = QListWidget()
+        self.fileListWidget.itemDoubleClicked.\
+            connect(self.fileitemDoubleClicked)
         filelistLayout = QVBoxLayout()
         filelistLayout.setContentsMargins(0, 0, 0, 0)
         filelistLayout.addWidget(self.fileListWidget)
@@ -133,6 +158,14 @@ class StartWindow(QMainWindow, WindowMixin):
         }
         self.scrollArea = scroll
 
+        # ____________                      ______
+        # __  ___/__(_)______ _____________ ___  /_______
+        # _____ \__  /__  __ `/_  __ \  __ `/_  /__  ___/
+        # ____/ /_  / _  /_/ /_  / / / /_/ /_  / _(__  )
+        # /____/ /_/  _\__, / /_/ /_/\__,_/ /_/  /____/
+
+        self.canvas.newShape.connect(self.newShape)
+
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.boxDock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.fileDock)
@@ -142,17 +175,23 @@ class StartWindow(QMainWindow, WindowMixin):
             | QDockWidget.DockWidgetFloatable
         self.boxDock.setFeatures(self.boxDock.features() ^ self.dockFeatures)
 
-        # ____    _   ___ _____ ___ ___  _  _ ___     _____
-        #    /   /_\ / __|_   _|_ _/ _ \| \| / __|   /     \
-        #   /   / _ \ (__  | |  | | (_) | .` \__ \  /       \
-        # __\  /_/ \_\___| |_| |___\___/|_|\_|___/  \_______/
+        # _______      __________
+        # ___    |_______  /___(_)____________________
+        # __  /| |  ___/  __/_  /_  __ \_  __ \_  ___/
+        # _  ___ / /__ / /_ _  / / /_/ /  / / /(__  )
+        # /_/  |_\___/ \__/ /_/  \____//_/ /_//____/
 
         # Load Actions
 
         # Manage File system
         quit = self.get_quit()
         open = self.get_open()
+        openfolder = self.get_openfolder()
         start = self.get_startlabel()
+        save = self.get_save()
+        changesavefolder = self.get_changesavefolder()
+        autosaving = self.get_autosaving()
+        saveformat = self.get_saveformat()
 
         # Manage Window Zoom
         zoom = self.get_zoom()
@@ -163,10 +202,12 @@ class StartWindow(QMainWindow, WindowMixin):
         fitWidth = self.get_fitwidth()
 
         # Store actions for further handling.
-        self.actions = struct(
-            quit=quit, open=open, zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut,
-            zoomOrg=zoomOrg, start=start, fitWindow=fitWindow,
-            fitWidth=fitWidth,
+        self.__actions = struct(
+            open=open, openfolder=openfolder, quit=quit, zoom=zoom,
+            zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
+            start=start, fitWindow=fitWindow, fitWidth=fitWidth,
+            autosaving=autosaving, save=save, saveformat=saveformat,
+            changesavefolder=changesavefolder,
             fileMenuActions=(
                 open,
                 quit),
@@ -201,6 +242,11 @@ class StartWindow(QMainWindow, WindowMixin):
         # Fill Menus
         addActions(self.menus.file, (
             open,
+            openfolder,
+            changesavefolder,
+            save,
+            saveformat,
+            autosaving,
             quit,
         ))
         addActions(self.menus.edit, (
@@ -221,7 +267,8 @@ class StartWindow(QMainWindow, WindowMixin):
         self.tools = self.toolbar('Tools', position='left')
         self.classtools = self.toolbar('Classes', position='top')
         self.actions.beginner = (
-            open, None, start, None, zoomIn, zoom, zoomOrg, zoomOut, fitWindow,
+            open, openfolder, saveformat, None, start,
+            None, zoomIn, zoom, zoomOrg, zoomOut, fitWindow,
             fitWidth, None,  quit
             )
 
@@ -257,16 +304,27 @@ class StartWindow(QMainWindow, WindowMixin):
         self.resize(size)
         self.move(position)
 
+        Shape.line_color = self.lineColor = QColor(
+            settings.get(SETTING_LINE_COLOR, DEFAULT_LINE_COLOR))
+        Shape.fill_color = self.fillColor = QColor(
+            settings.get(SETTING_FILL_COLOR, DEFAULT_FILL_COLOR))
+        self.canvas.setDrawingColor(self.lineColor)
+
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
 
     ###########################################################################
     #                       I M P O R T   M E T H O D S                       #
     ###########################################################################
 
-    from ._actions import get_open, get_quit, create_classes, get_classes,\
-        get_startlabel, get_zoom,  get_zoomin, get_zoomout, get_zoomorg,\
-        get_fitwindow, get_fitwidth
-    from ._filehandler import openFile, loadFile
+    from ._actions import get_open, get_openfolder, get_quit, create_classes, \
+        get_classes, get_startlabel, get_zoom,  get_zoomin, get_zoomout, \
+        get_zoomorg, get_fitwindow, get_fitwidth, get_autosaving, get_save, \
+        get_changesavefolder, get_saveformat
+    from ._filehandler import openFile, openFolder, loadFile, mayContinue, \
+        importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
+        fileitemDoubleClicked, saveFile, changeSaveFolderDialog,\
+        selectSaveFile, saveFileDialog, currentPath, saveLabels
+    from ._label import addLabel
     from ._events import status
 
     ###########################################################################
@@ -296,8 +354,17 @@ class StartWindow(QMainWindow, WindowMixin):
         self.zoomMode = self.FIT_WIDTH if value else self.MANUAL_ZOOM
         self.adjustScale()
 
+    def changeFormat(self):
+        if self.usePascalVocFormat:
+            self.set_format(FORMAT_YOLO)
+        elif self.useYoloFormat:
+            self.set_format(FORMAT_BOXSUP)
+        elif self.useBoxSupFormat:
+            self.set_format(FORMAT_PASCALVOC)
+
     def switchClass(self):
         name = self.sender().toolTip()
+        self.selectedClass = self.sender().text()
         getattr(self.classes, name).setIcon(newIcon('green'))
         if (
                 self.classes.activeClass is not None and
@@ -307,6 +374,32 @@ class StartWindow(QMainWindow, WindowMixin):
                 self.classes.activeClass
                 ).setIcon(newIcon('red'))
         setattr(self.classes, 'activeClass', name)
+
+    ###########################################################################
+    #                        S I G N A L M E T H O D S                        #
+    ###########################################################################
+
+    def newShape(self):
+        if self.selectedClass is not None:
+            text = self.selectedClass
+            self.prevLabelText = text
+            generate_color = generateColorByText(text)
+            shape = self.canvas.setLastLabel(
+                text,
+                generate_color,
+                generate_color)
+            self.addLabel(shape)
+            # if self.beginner():  # Switch to edit mode.
+            #     self.canvas.setEditing(True)
+            #     self.actions.create.setEnabled(True)
+            # else:
+            #     self.actions.editMode.setEnabled(True)
+            self.dirty = True
+
+            if text not in self.labelHist:
+                self.labelHist.append(text)
+        else:
+            self.canvas.resetAllLines()
 
     ###########################################################################
     #                              M E T H O D S                              #
@@ -366,11 +459,38 @@ class StartWindow(QMainWindow, WindowMixin):
         # for action in self.actions.onLoadActive:
         #     action.setEnabled(value)
 
+    def set_format(self, save_format):
+        if save_format == FORMAT_PASCALVOC:
+            self.actions.saveformat.setText(FORMAT_PASCALVOC)
+            self.actions.saveformat.setIcon(newIcon("format_voc"))
+            self.usePascalVocFormat = True
+            self.useYoloFormat = False
+            self.useBoxSupFormat = False
+            LabelFile.suffix = XML_EXT
+
+        elif save_format == FORMAT_YOLO:
+            self.actions.saveformat.setText(FORMAT_YOLO)
+            self.actions.saveformat.setIcon(newIcon("format_yolo"))
+            self.usePascalVocFormat = False
+            self.useYoloFormat = True
+            self.useBoxSupFormat = False
+            LabelFile.suffix = TXT_EXT
+
+        elif save_format == FORMAT_BOXSUP:
+            self.actions.saveformat.setText(FORMAT_BOXSUP)
+            self.actions.saveformat.setIcon(newIcon("format_boxsup"))
+            self.usePascalVocFormat = False
+            self.useYoloFormat = False
+            self.useBoxSupFormat = True
+            LabelFile.suffix = PNG_EXT
+
     ###########################################################################
     #                               G E T T E R                               #
     ###########################################################################
+    def __getActions(self):
+        return self.__actions
 
-    def __getPath(self):
+    def __getFilePath(self):
         return self.__filePath
 
     def __getAppname(self):
@@ -385,33 +505,211 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getImage(self):
         return self.__image
 
-    def getStr(self, strId):
+    def __getStr(self, strId):
         return self.__stringBundle.getString(strId)
+
+    def __getSelectedClass(self):
+        return self.__selectedClass
+
+    def __getItemsToShapes(self):
+        return self.__itemsToShapes
+
+    def __getShapesToItems(self):
+        return self.__shapesToItems
+
+    def __getPrevLabelText(self):
+        return self.__prevLabelText
+
+    def __getDirty(self):
+        return self.__dirty
+
+    def __getLastOpenFolder(self):
+        return self.__lastOpenFolder
+
+    def __getMImgList(self):
+        return self.__mImgList
+
+    def __getFoldername(self):
+        return self.__foldername
+
+    def __getLabelHist(self):
+        return self.__labelHist
+
+    def __getFileListWidget(self):
+        return self.__fileListWidget
+
+    def __getDefaultSaveDir(self):
+        return self.__defaultSaveDir
+
+    def __getUPascalVocFormat(self):
+        return self.__usePascalVocFormat
+
+    def __getUYoloFormat(self):
+        return self.__useYoloFormat
+
+    def __getUBoxSupFormat(self):
+        return self.__useBoxSupFormat
+
+    def __getLineColor(self):
+        return self.__lineColor
+
+    def __getFillColor(self):
+        return self.__fillColor
+
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
+    def __setActions(self, x):
+        if isinstance(x, struct):
+            self.__actions = x
+        else:
+            raise ValueError(x, self.__getStr('structE'))
+
+    def __setFilePath(self, x):
+        if isinstance(x, str) or x is None:
+            self.__filePath = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
 
     def __setDefaultSaveDir(self, x):
-        self.__defaultSaveDir = x
+        if isinstance(x, str) or x is None:
+            self.__defaultSaveDir = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
 
-    def setDirty(self):
-        self.__dirty = True
-        # self.actions.save.setEnabled(True)
-
-    def setClean(self):
-        self.__dirty = False
-        # self.__actions.save.setEnabled(False)
-        # self.__actions.create.setEnabled(True)
+    def __setDirty(self, x):
+        if isinstance(x, bool):
+            self.__dirty = x
+            if x:
+                self.actions.save.setEnabled(True)
+            else:
+                self.actions.save.setEnabled(False)
+                self.actions.start.setEnabled(True)
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
 
     def __setImage(self, x):
         self.__image = x
+
+    def __setImage(self, x):
+        if isinstance(x, QImage) or x is None:
+            self.__image = x
+        else:
+            raise ValueError(x, self.__getStr('imageE'))
+
+    def __setSelectedClass(self, x):
+        if isinstance(x, str):
+            self.__selectedClass = x
+        else:
+            raise ValueError(x, self.__getStr('strE'))
+
+    def __setItemsToShapes(self, x):
+        if isinstance(x, dict):
+            self.__itemsToShapes = x
+        else:
+            raise ValueError(x, self.__getStr('dictE'))
+
+    def __setShapesToItems(self, x):
+        if isinstance(x, dict):
+            self.__shapesToItems = x
+        else:
+            raise ValueError(x, self.__getStr('dictE'))
+
+    def __setPrevLabelText(self, x):
+        if isinstance(x, str):
+            self.__prevLabelText = x
+        else:
+            raise ValueError(x, self.__getStr('strE'))
+
+    def __setLastOpenFolder(self, x):
+        if isinstance(x, str) or x is None:
+            self.__lastOpenFolder = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
+
+    def __setMImgList(self, x):
+        if isinstance(x, list):
+            self.__mImgList = x
+        else:
+            raise ValueError(x, self.__getStr('listE'))
+
+    def __setFoldername(self, x):
+        if isinstance(x, str):
+            self.__foldername = x
+        else:
+            raise ValueError(x, self.__getStr('strE'))
+
+    def __setLabelHist(self, x):
+        if isinstance(x, list):
+            self.__labelHist = x
+        else:
+            raise ValueError(x, self.__getStr('listE'))
+
+    def __setFileListWidget(self, x):
+        if isinstance(x, QListWidget):
+            self.__fileListWidget = x
+        else:
+            raise ValueError(x, self.__getStr('qlistwidgetE'))
+
+    def __setDefaultSaveDir(self, x):
+        if isinstance(x, str) or x is None:
+            self.__defaultSaveDir = x
+        else:
+            raise ValueError(x, self.__getStr('strE'))
+
+    def __setUPascalVocFormat(self, x):
+        if isinstance(x, bool):
+            self.__usePascalVocFormat = x
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
+
+    def __setUYoloFormat(self, x):
+        if isinstance(x, bool):
+            self.__useYoloFormat = x
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
+
+    def __setUBoxSupFormat(self, x):
+        if isinstance(x, bool):
+            self.__useBoxSupFormat = x
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
+
+    def __setLineColor(self, x):
+        if isinstance(x, QColor):
+            self.__lineColor = x
+        else:
+            raise ValueError(x, self.__getStr('qcolorE'))
+
+    def __setFillColor(self, x):
+        if isinstance(x, QColor):
+            self.__fillColor = x
+        else:
+            raise ValueError(x, self.__getStr('qcolorE'))
 
     ###########################################################################
     #                           P R O P E R T I E S                           #
     ###########################################################################
 
-    path = property(__getPath)
+    actions = property(__getActions, __setActions)
+    filePath = property(__getFilePath, __setFilePath)
     appname = property(__getAppname)
     canvas = property(__getCanvas)
     image = property(__getImage, __setImage)
     defaultSaveDir = property(__getDefaultSaveDir, __setDefaultSaveDir)
+    selectedClass = property(__getSelectedClass, __setSelectedClass)
+    itemsToShapes = property(__getItemsToShapes, __setItemsToShapes)
+    shapesToItems = property(__getShapesToItems, __setShapesToItems)
+    prevLabelText = property(__getPrevLabelText, __setPrevLabelText)
+    dirty = property(__getDirty, __setDirty)
+    lastOpenFolder = property(__getLastOpenFolder, __setLastOpenFolder)
+    mImgList = property(__getMImgList, __setMImgList)
+    foldername = property(__getFoldername, __setFoldername)
+    labelHist = property(__getLabelHist, __setLabelHist)
+    fileListWidget = property(__getFileListWidget, __setFileListWidget)
+    defaultSaveDir = property(__getDefaultSaveDir, __setDefaultSaveDir)
+    usePascalVocFormat = property(__getUPascalVocFormat, __setUPascalVocFormat)
+    useYoloFormat = property(__getUYoloFormat, __setUYoloFormat)
+    useBoxSupFormat = property(__getUBoxSupFormat, __setUBoxSupFormat)
+    lineColor = property(__getLineColor, __setLineColor)
+    fillColor = property(__getFillColor, __setFillColor)
