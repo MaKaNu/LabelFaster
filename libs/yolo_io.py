@@ -13,7 +13,9 @@ ENCODE_METHOD = DEFAULT_ENCODING
 
 class YOLOWriter:
 
-    def __init__(self, foldername, filename, imgSize, databaseSrc='Unknown', localImgPath=None):
+    def __init__(
+            self, foldername, filename, imgSize, databaseSrc='Unknown',
+            localImgPath=None):
         self.foldername = foldername
         self.filename = filename
         self.databaseSrc = databaseSrc
@@ -22,7 +24,7 @@ class YOLOWriter:
         self.localImgPath = localImgPath
         self.verified = False
 
-    def addBndBox(self, xmin, ymin, xmax, ymax, name, difficult):
+    def addBndBox(self, xmin, ymin, xmax, ymax, name, difficult=False):
         bndbox = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
         bndbox['name'] = name
         bndbox['difficult'] = difficult
@@ -51,25 +53,28 @@ class YOLOWriter:
 
     def save(self, classList=[], targetFile=None):
 
-        out_file = None #Update yolo .txt
-        out_class_file = None   #Update class list .txt
+        out_file = None  # Update yolo .txt
+        out_class_file = None   # Update class list .txt
 
         if targetFile is None:
             out_file = open(
-            self.filename + TXT_EXT, 'w', encoding=ENCODE_METHOD)
-            classesFile = os.path.join(os.path.dirname(os.path.abspath(self.filename)), "classes.txt")
+                self.filename + TXT_EXT, 'w', encoding=ENCODE_METHOD)
+            classesFile = os.path.join(
+                os.path.dirname(os.path.abspath(self.filename)), "classes.txt")
             out_class_file = open(classesFile, 'w')
 
         else:
-            out_file = codecs.open(targetFile, 'w', encoding=ENCODE_METHOD)
-            classesFile = os.path.join(os.path.dirname(os.path.abspath(targetFile)), "classes.txt")
+            out_file = codecs.open(
+                targetFile, 'w', encoding=ENCODE_METHOD)
+            classesFile = os.path.join(
+                os.path.dirname(os.path.abspath(targetFile)), "classes.txt")
             out_class_file = open(classesFile, 'w')
-
 
         for box in self.boxlist:
             classIndex, xcen, ycen, w, h = self.BndBox2YoloLine(box, classList)
             # print (classIndex, xcen, ycen, w, h)
-            out_file.write("%d %.6f %.6f %.6f %.6f\n" % (classIndex, xcen, ycen, w, h))
+            out_file.write("%d %.6f %.6f %.6f %.6f\n" % (
+                classIndex, xcen, ycen, w, h))
 
         # print (classList)
         # print (out_class_file)
@@ -78,7 +83,6 @@ class YOLOWriter:
 
         out_class_file.close()
         out_file.close()
-
 
 
 class YoloReader:
