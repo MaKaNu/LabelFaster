@@ -2,8 +2,14 @@ import os
 
 from PyQt5.QtGui import QImage
 
+from libs.pascal_io import PascalVocWriter, XML_EXT
+from libs.yolo_io import YOLOWriter, TXT_EXT
+from libs.boxsup_io import BOXSUPWriter, PNG_EXT
+import os.path
 
-XML_EXT = '.xml'
+
+class LabelFileError(Exception):
+    pass
 
 
 class LabelFile(object):
@@ -15,6 +21,55 @@ class LabelFile(object):
         self.imageData = None
         self.verified = False
 
+    def savePascalVocFormat(self, filename, shapes, imagePath, imageData,
+                            lineColor=None, fillColor=None, databaseSrc=None):
+        imgFolderPath = os.path.dirname(imagePath)
+        imgFolderName = os.path.split(imgFolderPath)[-1]
+        imgFileName = os.path.basename(imagePath)
+        # Read from file path because self.imageData might be empty if saving
+        # to Pascal format
+        image = QImage()
+        image.load(imagePath)
+        imageShape = [image.height(), image.width(),
+                      1 if image.isGrayscale() else 3]
+        writer = PascalVocWriter(imgFolderName, imgFileName,
+                                 imageShape, localImgPath=imagePath)
+        writer.verified = self.verified
+
+        for shape in shapes:
+            points = shape['points']
+            label = shape['label']
+            bndbox = LabelFile.convertPoints2BndBox(points)
+            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label)
+
+        writer.save(targetFile=filename)
+        return
+
+    def saveYoloFormat(
+            self, filename, shapes, imagePath, imageData, classList,
+            lineColor=None, fillColor=None, databaseSrc=None):
+        imgFolderPath = os.path.dirname(imagePath)
+        imgFolderName = os.path.split(imgFolderPath)[-1]
+        imgFileName = os.path.basename(imagePath)
+        # Read from file path because self.imageData might be empty if saving
+        # to Pascal format
+        image = QImage()
+        image.load(imagePath)
+        imageShape = [image.height(), image.width(),
+                      1 if image.isGrayscale() else 3]
+        writer = YOLOWriter(
+            imgFolderName, imgFileName,
+            imageShape, localImgPath=imagePath)
+        writer.verified = self.verified
+
+        for shape in shapes:
+            points = shape['points']
+            label = shape['label']
+            bndbox = LabelFile.convertPoints2BndBox(points)
+            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label)
+
+        writer.save(targetFile=filename, classList=classList)
+        return
 
     def saveBoxSupFormat(
             self, filename, shapes, imagePath, imageData, classList,
