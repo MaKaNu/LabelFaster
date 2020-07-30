@@ -17,6 +17,7 @@ CURSOR_GRAB = Qt.OpenHandCursor
 
 class Canvas(QWidget):
     drawingPolygon = pyqtSignal(bool)
+    newShape = pyqtSignal()
 
     CREATE, EDIT = list(range(2))
 
@@ -27,12 +28,16 @@ class Canvas(QWidget):
         self.__pixmap = QPixmap()
         self.__mode = self.EDIT
         self.__current = None
+        self.__hShape = None
+        self.__hVertex = None
         self.__shapes = []
-        self.__drawingLineColor = QColor(0, 0, 255)
-        self.__drawingRectColor = QColor(0, 0, 255)
+        self.__drawingLineColor = QColor(45, 168, 179)
+        self.__drawingRectColor = QColor(45, 168, 179)
         self.__line = Shape(line_color=self.drawingLineColor)
         self.__selectedShape = None
         self.__verified = False
+        self.__hideBackground = False
+        self.__visible = {}
         self.scale = 1.0
         self._painter = QPainter()
         self._cursor = CURSOR_DEFAULT
@@ -103,6 +108,43 @@ class Canvas(QWidget):
         return not (0 <= p.x() <= w and 0 <= p.y() <= h)
 
     ###########################################################################
+    #                               S H A P E S                               #
+    ###########################################################################
+
+    def selectShape(self, shape):
+        self.deSelectShape()
+        shape.selected = True
+        self.selectedShape = shape
+        self.setHiding()
+        self.selectionChanged.emit(True)
+        self.update()
+
+    def selectShapePoint(self, point):
+        """Select the first shape created which contains this point."""
+        self.deSelectShape()
+        if self.selectedVertex():  # A vertex is marked for selection.
+            index, shape = self.hVertex, self.hShape
+            shape.highlightVertex(index, shape.MOVE_VERTEX)
+            self.selectShape(shape)
+            return
+        for shape in reversed(self.shapes):
+            if self.isVisible(shape) and shape.containsPoint(point):
+                self.selectShape(shape)
+                self.calculateOffsets(shape, point)
+                return
+
+    def deSelectShape(self):
+        if self.selectedShape:
+            self.selectedShape.selected = False
+            self.selectedShape = None
+            self.setHiding(False)
+            self.selectionChanged.emit(False)
+            self.update()
+
+    def selectedVertex(self):
+        return self.hVertex is not None
+
+    ###########################################################################
     #                              D R A W I N G                              #
     ###########################################################################
 
@@ -136,6 +178,39 @@ class Canvas(QWidget):
             self.drawingPolygon.emit(False)
             self.update()
             return
+        self.current.close()
+        self.shapes.append(self.current)
+        self.current = None
+        self.hideBackground = False
+        self.newShape.emit()
+        self.update()
+
+    def undoLastLine(self):
+        assert self.shapes
+        self.current = self.shapes.pop()
+        self.current.setOpen()
+        self.line.points = [self.current[-1], self.current[0]]
+        self.drawingPolygon.emit(True)
+
+    def resetAllLines(self):
+        assert self.shapes
+        self.current = self.shapes.pop()
+        self.current.setOpen()
+        self.line.points = [self.current[-1], self.current[0]]
+        self.drawingPolygon.emit(True)
+        self.current = None
+        self.drawingPolygon.emit(False)
+        self.update()
+
+    def closeEnough(self, p1, p2):
+        return distance(p1 - p2) < self.epsilon
+
+    def isVisible(self, shape):
+        return self.visible.get(shape, True)
+
+    def setDrawingColor(self, qColor):
+        self.drawingLineColor = qColor
+        self.drawingRectColor = qColor
 
     ###########################################################################
     #                               E V E N T S                               #
@@ -298,7 +373,7 @@ class Canvas(QWidget):
 
         Shape.scale = self.scale
         for shape in self.shapes:
-            if (shape.selected or not self._hideBackround) \
+            if (shape.selected or not self.hideBackground) \
                     and self.isVisible(shape):
                 shape.fill = shape.selected or shape == self.hShape
                 shape.paint(p)
@@ -374,15 +449,41 @@ class Canvas(QWidget):
     def __getDrawingRectColor(self):
         return self.__drawingRectColor
 
+    def __getSelectedShape(self):
+        return self.__selectedShape
+
+    def __getHideBackground(self):
+        return self.__hideBackground
+
+    def __getVisible(self):
+        return self.__visible
+
+    def __getHShape(self):
+        return self.__hShape
+
+    def __getHVertex(self):
+        return self.__hVertex
+
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
+
+    def setLastLabel(self, text, line_color=None, fill_color=None):
+        assert text
+        self.shapes[-1].label = text
+        if line_color:
+            self.shapes[-1].line_color = line_color
+
+        if fill_color:
+            self.shapes[-1].fill_color = fill_color
+
+        return self.shapes[-1]
 
     def __setVerified(self, x):
         if isinstance(x, bool):
             self.__verified = x
         else:
-            raise ValueError(x, self.__getStr('verifiedE'))
+            raise ValueError(x, self.__getStr('boolE'))
 
     def __setPixmap(self, x):
         if isinstance(x, QPixmap):
@@ -400,29 +501,58 @@ class Canvas(QWidget):
             raise ValueError(x, self.__getStr('modeE'))
 
     def __setCurrent(self, x):
-        if isinstance(x, Shape):
+        if isinstance(x, Shape) or x is None:
             self.__current = x
         else:
-            raise ValueError(x, self.__getStr('currentE'))
+            raise ValueError(x, self.__getStr('shapeE'))
 
     def __setLine(self, x):
-        if isinstance(x, Shape):
+        if isinstance(x, Shape) or x is None:
             self.__line = x
         else:
-            raise ValueError(x, self.__getStr('lineE'))
+            raise ValueError(x, self.__getStr('shapeE'))
 
     def __setdrawingLineColor(self, x):
         if isinstance(x, QColor):
             self.__drawingLineColor = x
         else:
-            raise ValueError(x, self.__getStr('drawlinecolorE'))
+            raise ValueError(x, self.__getStr('colorE'))
 
     def __setdrawingRectColor(self, x):
         if isinstance(x, QColor):
             self.__drawingRectColor = x
         else:
-            raise ValueError(x, self.__getStr('drawrectcolorE'))
+            raise ValueError(x, self.__getStr('colorE'))
 
+    def __setSelectedShape(self, x):
+        if isinstance(x, Shape) or x is None:
+            self.__selectedShape = x
+        else:
+            raise ValueError(x, self.__getStr('shapeE'))
+
+    def __setHideBackground(self, x):
+        if isinstance(x, bool):
+            self.__hideBackground = x
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
+
+    def __setVisible(self, x):
+        if isinstance(x, bool):
+            self.__visible = x
+        else:
+            raise ValueError(x, self.__getStr('dictE'))
+
+    def __setHShape(self, x):
+        if isinstance(x, Shape):
+            self.__hShape = x
+        else:
+            raise ValueError(x, self.__getStr('shapeE'))
+
+    def __setHVertex(self, x):
+        if isinstance(x, int):
+            self.__hVertex = x
+        else:
+            raise ValueError(x, self.__getStr('intE'))
     ###########################################################################
     #                           P R O P E R T I E S                           #
     ###########################################################################
@@ -435,3 +565,8 @@ class Canvas(QWidget):
     line = property(__getLine, __setLine)
     drawingLineColor = property(__getDrawingLineColor, __setdrawingLineColor)
     drawingRectColor = property(__getDrawingRectColor, __setdrawingRectColor)
+    selectedShape = property(__getSelectedShape, __setSelectedShape)
+    hideBackground = property(__getHideBackground, __setHideBackground)
+    visible = property(__getVisible, __setVisible)
+    hShape = property(__getHShape, __setHShape)
+    hVertex = property(__getHVertex, __setHVertex)
