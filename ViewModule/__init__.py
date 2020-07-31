@@ -405,6 +405,16 @@ class StartWindow(QMainWindow, WindowMixin):
     #                              M E T H O D S                              #
     ###########################################################################
 
+    def resetState(self):
+        self.itemsToShapes.clear()
+        self.shapesToItems.clear()
+        self.labelList.clear()
+        self.filePath = None
+        self.imageData = None
+        self.labelFile = None
+        self.canvas.resetState()
+        self.labelCoordinates.clear()
+
     def adjustScale(self, initial=False):
         value = self.scalers[self.FIT_WINDOW if initial else self.zoomMode]()
         self.zoomWidget.setValue(int(100 * value))
