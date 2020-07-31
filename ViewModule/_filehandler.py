@@ -363,6 +363,8 @@ def loadPredefinedClasses(self, predefClassesFile):
 
 
 def fileitemDoubleClicked(self, item=None):
+    if not self.mayContinue():
+        return
     currIndex = self.mImgList.index(item.text())
     if currIndex < len(self.mImgList):
         filename = self.mImgList[currIndex]
