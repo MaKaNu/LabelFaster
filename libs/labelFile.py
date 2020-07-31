@@ -14,10 +14,10 @@ class LabelFileError(Exception):
 
 class LabelFile(object):
     suffix = XML_EXT
+    labelPath = None
 
     def __init__(self, filename=None):
         self.shape = ()
-        self.labelPath = None
         self.imagePath = None
         self.imageData = None
         self.verified = False
@@ -108,10 +108,16 @@ class LabelFile(object):
     def changeExt(self, ext):
         self.suffix = ext
 
+    def changePath(self, path):
+        self.labelPath = path
+
     @staticmethod
     def isLabelFile(filename):
-        fileSuffix = os.path.splitext(filename)[1].lower()
-        return fileSuffix == LabelFile.suffix
+        if LabelFile.labelPath is not None:
+            labelPath = filename.parent
+            return labelPath.resolve() == LabelFile.labelPath.resolve()
+        else:
+            return False
 
     @staticmethod
     def convertPoints2BndBox(points):
