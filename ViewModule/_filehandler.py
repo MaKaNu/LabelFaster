@@ -142,7 +142,7 @@ def openNextImg(self, _value=False):
 
 def loadFile(self, filePath=None):
     """Load the specified file, or the last opened file if None."""
-    # self.resetState()
+    self.resetState()
     # self.canvas.setEnabled(False)
     if filePath is None:
         filePath = self.settings.get(SETTING_FILENAME)
