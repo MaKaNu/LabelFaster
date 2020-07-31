@@ -2,6 +2,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from pathlib import Path
+
 from libs.labelFile import LabelFile, LabelFileError
 from libs.utils import natural_sort
 from libs.pascal_io import PascalVocReader, XML_EXT
@@ -16,7 +18,9 @@ import codecs
 
 
 def openFile(self):
-    path = os.path.dirname(self.filePath) if self.filePath else '.'
+    if not self.mayContinue():
+        return
+    path = self.filePath.parents[0] if self.filePath else Path()
     formats = [
         '*.%s' % fmt.data().decode("ascii").lower()
         for fmt in QImageReader.supportedImageFormats()]
@@ -25,30 +29,32 @@ def openFile(self):
         ['*%s' % LabelFile.suffix])
     filename = QFileDialog.getOpenFileName(
         None,
-        '%s - Choose Image or Label file' % self.appname, path, filters)
+        '%s - Choose Image or Label file' % self.appname,
+        str(path.absolute()), filters)
     if all(filename):
         if isinstance(filename, (tuple, list)):
-            filename = filename[0]
+            filename = Path(filename[0])
         self.loadFile(filename)
-    elif filename[0] == '':
-        pass  # Set a variable later to stop throwing the wrong datatype message
+    else:
+        pass
+        # TODO errormessage to inform that something went wrong
 
 
 def openFolder(self, silent=False):
     if not self.mayContinue():
         return
 
-    if self.lastOpenFolder and os.path.exists(self.lastOpenFolder):
+    if self.lastOpenFolder and self.lastOpenFolder.exists():
         defaultOpenDirPath = self.lastOpenDir
     else:
-        defaultOpenDirPath = os.path.dirname(self.filePath) \
-            if self.filePath else '.'
+        defaultOpenDirPath = self.filePath.parent if self.filePath else Path()
     if not silent:
         targetDirPath = QFileDialog.getExistingDirectory(
             self,
             '%s - Open Directory' % self.appname,
-            defaultOpenDirPath,
+            str(defaultOpenDirPath.absolute()),
             QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
+        targetDirPath = Path(targetDirPath)
     else:
         targetDirPath = defaultOpenDirPath
 
@@ -76,12 +82,10 @@ def scanAllImages(self, folderPath):
         for fmt in QImageReader.supportedImageFormats()]
     images = []
 
-    for root, _, files in os.walk(folderPath):
-        for file in files:
-            if file.lower().endswith(tuple(extensions)):
-                relativePath = os.path.join(root, file)
-                path = os.path.abspath(relativePath)
-                images.append(path)
+    for file in folderPath.glob('*'):
+        if file.suffix.lower() in extensions:
+            images.append(file.absolute())
+
     natural_sort(images, key=lambda x: x.lower())
     return images
 
@@ -146,21 +150,23 @@ def loadFile(self, filePath=None):
     # self.canvas.setEnabled(False)
     if filePath is None:
         filePath = self.settings.get(SETTING_FILENAME)
+    else:
+        filePath = Path(filePath)
 
-    # Fix bug: An  index error after select a directory when open a new file.
-    unicodeFilePath = os.path.abspath(filePath)
+    # Get absolute Filepath
+    absoluteFilePath = filePath.absolute()
 
-    if unicodeFilePath and os.path.exists(unicodeFilePath):
-        if LabelFile.isLabelFile(unicodeFilePath):
+    if absoluteFilePath and absoluteFilePath.exists():
+        if LabelFile.isLabelFile(absoluteFilePath):
             try:
-                self.labelFile = LabelFile(unicodeFilePath)
+                self.labelFile = LabelFile(absoluteFilePath)
             except LabelFileError as e:
                 self.errorMessage(u'Error opening file', (
                     u"<p><b>%s</b></p>"
                     u"<p>Make sure <i>%s</i> is a valid label file."
-                    ) % (e, unicodeFilePath)
+                    ) % (e, absoluteFilePath)
                     )
-                self.status("Error reading %s" % unicodeFilePath)
+                self.status("Error reading %s" % absoluteFilePath)
                 return False
             self.imageData = self.labelFile.imageData
             self.lineColor = QColor(*self.labelFile.lineColor)
@@ -169,22 +175,23 @@ def loadFile(self, filePath=None):
         else:
             # Load image:
             # read data first and store for saving into label file.
-            self.imageData = read(unicodeFilePath, None)
+            self.imageData = read(absoluteFilePath, None)
             self.labelFile = None
             self.canvas.verified = False
+            self.imageFolder = absoluteFilePath.parent
 
         image = QImage.fromData(self.imageData)
         if image.isNull():
             self.errorMessage(
                 u'Error opening file',
                 u"<p>Make sure <i>%s</i> is a valid image file."
-                % unicodeFilePath
+                % absoluteFilePath
                 )
-            self.status("Error reading %s" % unicodeFilePath)
+            self.status("Error reading %s" % absoluteFilePath)
             return False
-        self.status("Loaded %s" % os.path.basename(unicodeFilePath))
+        self.status("Loaded %s" % absoluteFilePath.name)
         self.image = image
-        self.filePath = unicodeFilePath
+        self.filePath = absoluteFilePath
         self.canvas.loadPixmap(QPixmap.fromImage(image))
         if self.labelFile:
             self.loadLabels(self.labelFile.shapes)
@@ -197,11 +204,10 @@ def loadFile(self, filePath=None):
 
         # Label xml file and show bound box according to its filename
         # if self.usingPascalVocFormat is True:
-        if self.defaultSaveDir is not None:
-            basename = os.path.basename(
-                os.path.splitext(self.filePath)[0])
-            xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
-            txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
+        if self.labelFolder is not None:
+            basename = self.filePath.stem
+            xmlPath = self.filePath / Path(basename + XML_EXT) 
+            txtPath = os.path.join(self.labelFolder, basename + TXT_EXT)
 
             """Annotation file priority:
             PascalXML > YOLO
@@ -210,15 +216,8 @@ def loadFile(self, filePath=None):
                 self.loadPascalXMLByFilename(xmlPath)
             elif os.path.isfile(txtPath):
                 self.loadYOLOTXTByFilename(txtPath)
-        else:
-            xmlPath = os.path.splitext(filePath)[0] + XML_EXT
-            txtPath = os.path.splitext(filePath)[0] + TXT_EXT
-            if os.path.isfile(xmlPath):
-                self.loadPascalXMLByFilename(xmlPath)
-            elif os.path.isfile(txtPath):
-                self.loadYOLOTXTByFilename(txtPath)
 
-        self.setWindowTitle(self.appname + ' ' + filePath)
+        self.setWindowTitle(self.appname + ' ' + str(filePath.absolute()))
 
         # Default : select last item if there is at least one item
         # if self.labelList.count():

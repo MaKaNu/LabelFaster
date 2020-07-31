@@ -52,7 +52,8 @@ class StartWindow(QMainWindow, WindowMixin):
             appname='defaultName',
             defaultFilename=None,
             defaultPredefClassFile=None,
-            defaultSaveDir=None):
+            defaultImageFolder=None,
+            defaultLabelFolder=None):
         super().__init__()
         self.__appname = appname
         self.setWindowTitle(appname)
@@ -84,7 +85,8 @@ class StartWindow(QMainWindow, WindowMixin):
         # File and path informations
         self.__image = QImage()
         self.__filePath = defaultFilename
-        self.__defaultSaveDir = defaultSaveDir
+        self.__imageFolder = defaultImageFolder
+        self.__labelFolder = defaultLabelFolder
         self.__lastOpenFolder = None
         self.__loadPredefinedClasses(defaultPredefClassFile)
 
@@ -97,7 +99,6 @@ class StartWindow(QMainWindow, WindowMixin):
         def getStr(strId): return self.__stringBundle.getString(strId)
 
         # Save as Format Flags
-        self.__defaultSaveDir = defaultSaveDir
         self.__usePascalVocFormat = True
         self.__useYoloFormat = False
         self.__useBoxSupFormat = False
@@ -503,14 +504,23 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getFilePath(self):
         return self.__filePath
 
+    def __getImageFolder(self):
+        return self.__imageFolder
+
+    def __getLabelFolder(self):
+        return self.__labelFolder
+
+    def __getFoldername(self):
+        return self.__foldername
+
+    def __getLastOpenFolder(self):
+        return self.__lastOpenFolder
+
     def __getAppname(self):
         return self.__appname
 
     def __getCanvas(self):
         return self.__canvas
-
-    def __getDefaultSaveDir(self):
-        return self.__defaultSaveDir
 
     def __getImage(self):
         return self.__image
@@ -533,23 +543,14 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getDirty(self):
         return self.__dirty
 
-    def __getLastOpenFolder(self):
-        return self.__lastOpenFolder
-
     def __getMImgList(self):
         return self.__mImgList
-
-    def __getFoldername(self):
-        return self.__foldername
 
     def __getLabelHist(self):
         return self.__labelHist
 
     def __getFileListWidget(self):
         return self.__fileListWidget
-
-    def __getDefaultSaveDir(self):
-        return self.__defaultSaveDir
 
     def __getUPascalVocFormat(self):
         return self.__usePascalVocFormat
@@ -576,14 +577,32 @@ class StartWindow(QMainWindow, WindowMixin):
             raise ValueError(x, self.__getStr('structE'))
 
     def __setFilePath(self, x):
-        if isinstance(x, str) or x is None:
+        if isinstance(x, Path) or x is None:
             self.__filePath = x
         else:
             raise ValueError(x, self.__getStr('pathE'))
 
-    def __setDefaultSaveDir(self, x):
-        if isinstance(x, str) or x is None:
-            self.__defaultSaveDir = x
+    def __setImageFolder(self, x):
+        if isinstance(x, Path) or x is None:
+            self.__imageFolder = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
+
+    def __setLabelFolder(self, x):
+        if isinstance(x, Path) or x is None:
+            self.__labelFolder = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
+
+    def __setFoldername(self, x):
+        if isinstance(x, Path):
+            self.__foldername = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
+
+    def __setLastOpenFolder(self, x):
+        if isinstance(x, Path) or x is None:
+            self.__lastOpenFolder = x
         else:
             raise ValueError(x, self.__getStr('pathE'))
 
@@ -631,23 +650,11 @@ class StartWindow(QMainWindow, WindowMixin):
         else:
             raise ValueError(x, self.__getStr('strE'))
 
-    def __setLastOpenFolder(self, x):
-        if isinstance(x, str) or x is None:
-            self.__lastOpenFolder = x
-        else:
-            raise ValueError(x, self.__getStr('pathE'))
-
     def __setMImgList(self, x):
         if isinstance(x, list):
             self.__mImgList = x
         else:
             raise ValueError(x, self.__getStr('listE'))
-
-    def __setFoldername(self, x):
-        if isinstance(x, str):
-            self.__foldername = x
-        else:
-            raise ValueError(x, self.__getStr('strE'))
 
     def __setLabelHist(self, x):
         if isinstance(x, list):
@@ -660,12 +667,6 @@ class StartWindow(QMainWindow, WindowMixin):
             self.__fileListWidget = x
         else:
             raise ValueError(x, self.__getStr('qlistwidgetE'))
-
-    def __setDefaultSaveDir(self, x):
-        if isinstance(x, str) or x is None:
-            self.__defaultSaveDir = x
-        else:
-            raise ValueError(x, self.__getStr('strE'))
 
     def __setUPascalVocFormat(self, x):
         if isinstance(x, bool):
@@ -703,21 +704,25 @@ class StartWindow(QMainWindow, WindowMixin):
 
     actions = property(__getActions, __setActions)
     filePath = property(__getFilePath, __setFilePath)
+    imageFolder = property(__getImageFolder, __setImageFolder)
+    labelFolder = property(__getLabelFolder, __setLabelFolder)
+    foldername = property(__getFoldername, __setFoldername)
+    lastOpenFolder = property(__getLastOpenFolder, __setLastOpenFolder)
+
     appname = property(__getAppname)
     canvas = property(__getCanvas)
     image = property(__getImage, __setImage)
-    defaultSaveDir = property(__getDefaultSaveDir, __setDefaultSaveDir)
+
     selectedClass = property(__getSelectedClass, __setSelectedClass)
     itemsToShapes = property(__getItemsToShapes, __setItemsToShapes)
     shapesToItems = property(__getShapesToItems, __setShapesToItems)
     prevLabelText = property(__getPrevLabelText, __setPrevLabelText)
     dirty = property(__getDirty, __setDirty)
-    lastOpenFolder = property(__getLastOpenFolder, __setLastOpenFolder)
+
     mImgList = property(__getMImgList, __setMImgList)
-    foldername = property(__getFoldername, __setFoldername)
     labelHist = property(__getLabelHist, __setLabelHist)
     fileListWidget = property(__getFileListWidget, __setFileListWidget)
-    defaultSaveDir = property(__getDefaultSaveDir, __setDefaultSaveDir)
+
     usePascalVocFormat = property(__getUPascalVocFormat, __setUPascalVocFormat)
     useYoloFormat = property(__getUYoloFormat, __setUYoloFormat)
     useBoxSupFormat = property(__getUBoxSupFormat, __setUBoxSupFormat)
