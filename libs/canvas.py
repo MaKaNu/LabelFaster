@@ -48,10 +48,14 @@ class Canvas(QWidget):
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.WheelFocus)
 
-    def loadPixmap(self, pixmap):
-        self.pixmap = pixmap
-        self.shapes = []
-        self.repaint()
+    ###########################################################################
+    #                                S T A T E                                #
+    ###########################################################################
+
+    def resetState(self):
+        self.restoreCursor()
+        self.pixmap = None
+        self.update()
 
     ###########################################################################
     #                                 E D I T                                 #
