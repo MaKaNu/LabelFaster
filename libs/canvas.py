@@ -491,7 +491,7 @@ class Canvas(QWidget):
             raise ValueError(x, self.__getStr('boolE'))
 
     def __setPixmap(self, x):
-        if isinstance(x, QPixmap):
+        if isinstance(x, QPixmap) or x is None:
             self.__pixmap = x
         else:
             raise ValueError(x, self.__getStr('pixmapE'))
