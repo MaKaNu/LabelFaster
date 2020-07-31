@@ -17,12 +17,14 @@ class LabelFile(object):
 
     def __init__(self, filename=None):
         self.shape = ()
+        self.labelPath = None
         self.imagePath = None
         self.imageData = None
         self.verified = False
 
     def savePascalVocFormat(self, filename, shapes, imagePath, imageData,
                             lineColor=None, fillColor=None, databaseSrc=None):
+        self.labelPath = filename
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
@@ -48,6 +50,7 @@ class LabelFile(object):
     def saveYoloFormat(
             self, filename, shapes, imagePath, imageData, classList,
             lineColor=None, fillColor=None, databaseSrc=None):
+        self.labelPath = filename
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
@@ -74,6 +77,7 @@ class LabelFile(object):
     def saveBoxSupFormat(
             self, filename, shapes, imagePath, imageData, classList,
             lineColor=None, fillColor=None, databaseSrc=None):
+        self.labelPath = filename
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
