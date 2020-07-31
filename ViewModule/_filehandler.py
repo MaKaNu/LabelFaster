@@ -292,7 +292,6 @@ def selectSaveFile(self, annotationFilePath):
 
 
 def saveLabels(self, annotationFilePath):
-    annotationFilePath = annotationFilePath
     if self.labelFile is None:
         self.labelFile = LabelFile()
         self.labelFile.verified = self.canvas.verified
