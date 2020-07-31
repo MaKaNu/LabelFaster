@@ -257,14 +257,10 @@ def saveFile(self, _value=False):
             imgFileName = os.path.basename(self.filePath)
             savedFileName = os.path.splitext(imgFileName)[0]
             savedPath = os.path.join(self.defaultSaveDir, savedFileName)
-            self._saveFile(savedPath)
+            self.selectSaveFile(savedPath)
     else:
-        imgFileDir = os.path.dirname(self.filePath)
-        imgFileName = os.path.basename(self.filePath)
-        savedFileName = os.path.splitext(imgFileName)[0]
-        savedPath = os.path.join(imgFileDir, savedFileName)
         self.selectSaveFile(
-            savedPath if self.labelFile
+            self.labelFile.labelPath if self.labelFile
             else self.saveFileDialog(removeExt=False))
 
 
