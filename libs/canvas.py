@@ -152,6 +152,11 @@ class Canvas(QWidget):
     #                              D R A W I N G                              #
     ###########################################################################
 
+    def loadPixmap(self, pixmap):
+        self.pixmap = pixmap
+        self.shapes = []
+        self.repaint()
+
     def handleDrawing(self, pos):
         if self.current and self.current.reachMaxPoints() is False:
             initPos = self.current[0]
