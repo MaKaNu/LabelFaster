@@ -67,7 +67,7 @@ class BOXSUPWriter(QWidget):
 
         image = self.BndBox2BoxSupImg(self.boxlist, classList)
 
-        image.save(out_file)
+        image.save(str(out_file))
 
         for c in classList:
             out_class_file.write(c+'\n')

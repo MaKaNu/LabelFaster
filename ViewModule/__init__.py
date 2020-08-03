@@ -50,28 +50,29 @@ class StartWindow(QMainWindow, WindowMixin):
     def __init__(
             self,
             appname='defaultName',
-            defaultFilename=None,
-            defaultPredefClassFile=None,
-            defaultImageFolder=None,
-            defaultLabelFolder=None):
+            defaultFilename=nonePath,
+            defaultPredefClassFile=nonePath,
+            defaultImageFolder=nonePath,
+            defaultLabelFolder=nonePath):
         super().__init__()
         self.__appname = appname
         self.setWindowTitle(appname)
+
+        # Load string bundle for i18n
+        self.__stringBundle = StringBundle.getBundle()
+        def getStr(strId): return self.__stringBundle.getString(strId)
 
         # Load setting in the main thread
         self.settings = Settings()
         self.settings.load()
         settings = self.settings
 
-        # Standard QT Parameter
-        self.title = 'ROISA - Region of Interest Selector Automat'
-
         # Unsaved Status Flag
         self.__dirty = False
 
         # For loading all image under a directory
         self.__mImgList = []
-        self.__foldername = None
+        self.__foldername = nonePath
         self.__labelHist = []
 
         # Match Shapes and Labels
@@ -87,16 +88,12 @@ class StartWindow(QMainWindow, WindowMixin):
         self.__filePath = defaultFilename
         self.__imageFolder = defaultImageFolder
         self.__labelFolder = defaultLabelFolder
-        self.__lastOpenFolder = None
+        self.__lastOpenFolder = nonePath
         self.__loadPredefinedClasses(defaultPredefClassFile)
 
         # Application state
         self.__lineColor = None
         self.__fillColor = None
-
-        # Load string bundle for i18n
-        self.__stringBundle = StringBundle.getBundle()
-        def getStr(strId): return self.__stringBundle.getString(strId)
 
         # Save as Format Flags
         self.__usePascalVocFormat = True
@@ -410,7 +407,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.itemsToShapes.clear()
         self.shapesToItems.clear()
         self.labelList.clear()
-        self.filePath = None
+        self.filePath = nonePath
         self.imageData = None
         self.labelFile = None
         self.canvas.resetState()
@@ -577,31 +574,31 @@ class StartWindow(QMainWindow, WindowMixin):
             raise ValueError(x, self.__getStr('structE'))
 
     def __setFilePath(self, x):
-        if isinstance(x, Path) or x is None:
+        if isinstance(x, Path) or x is nonePath:
             self.__filePath = x
         else:
             raise ValueError(x, self.__getStr('pathE'))
 
     def __setImageFolder(self, x):
-        if isinstance(x, Path) or x is None:
+        if isinstance(x, Path) or x is nonePath:
             self.__imageFolder = x
         else:
             raise ValueError(x, self.__getStr('pathE'))
 
     def __setLabelFolder(self, x):
-        if isinstance(x, Path) or x is None:
+        if isinstance(x, Path) or x is nonePath:
             self.__labelFolder = x
         else:
             raise ValueError(x, self.__getStr('pathE'))
 
     def __setFoldername(self, x):
-        if isinstance(x, Path):
+        if isinstance(x, Path) or x is nonePath:
             self.__foldername = x
         else:
             raise ValueError(x, self.__getStr('pathE'))
 
     def __setLastOpenFolder(self, x):
-        if isinstance(x, Path) or x is None:
+        if isinstance(x, Path) or x is nonePath:
             self.__lastOpenFolder = x
         else:
             raise ValueError(x, self.__getStr('pathE'))

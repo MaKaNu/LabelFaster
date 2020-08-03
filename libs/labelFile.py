@@ -5,6 +5,7 @@ from PyQt5.QtGui import QImage
 from libs.pascal_io import PascalVocWriter, XML_EXT
 from libs.yolo_io import YOLOWriter, TXT_EXT
 from libs.boxsup_io import BOXSUPWriter, PNG_EXT
+from libs.utils import nonePath
 import os.path
 
 
@@ -14,7 +15,7 @@ class LabelFileError(Exception):
 
 class LabelFile(object):
     suffix = XML_EXT
-    labelPath = None
+    labelPath = nonePath
 
     def __init__(self, filename=None):
         self.shape = ()
@@ -31,7 +32,7 @@ class LabelFile(object):
         # Read from file path because self.imageData might be empty if saving
         # to Pascal format
         image = QImage()
-        image.load(imagePath)
+        image.load(str(imagePath))
         imageShape = [image.height(), image.width(),
                       1 if image.isGrayscale() else 3]
         writer = PascalVocWriter(imgFolderName, imgFileName,
@@ -57,7 +58,7 @@ class LabelFile(object):
         # Read from file path because self.imageData might be empty if saving
         # to Pascal format
         image = QImage()
-        image.load(imagePath)
+        image.load(str(imagePath))
         imageShape = [image.height(), image.width(),
                       1 if image.isGrayscale() else 3]
         writer = YOLOWriter(
@@ -82,7 +83,7 @@ class LabelFile(object):
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
         image = QImage()
-        image.load(imagePath)
+        image.load(str(imagePath))
         imageShape = [image.height(), image.width(),
                       1 if image.isGrayscale() else 3]
         writer = BOXSUPWriter(
@@ -113,11 +114,8 @@ class LabelFile(object):
 
     @staticmethod
     def isLabelFile(filename):
-        if LabelFile.labelPath is not None:
-            labelPath = filename.parent
-            return labelPath.resolve() == LabelFile.labelPath.resolve()
-        else:
-            return False
+        labelPath = filename.parent
+        return labelPath.resolve() == LabelFile.labelPath.resolve()
 
     @staticmethod
     def convertPoints2BndBox(points):

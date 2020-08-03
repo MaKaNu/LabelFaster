@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import *
 from pathlib import Path
 
 from libs.labelFile import LabelFile, LabelFileError
-from libs.utils import natural_sort
+from libs.utils import natural_sort, nonePath
 from libs.pascal_io import PascalVocReader, XML_EXT
 from libs.yolo_io import YoloReader, TXT_EXT
 from libs.boxsup_io import BOXSUPReader, PNG_EXT
@@ -47,7 +47,8 @@ def openFolder(self, silent=False):
     if self.lastOpenFolder and self.lastOpenFolder.exists():
         defaultOpenDirPath = self.lastOpenDir
     else:
-        defaultOpenDirPath = self.filePath.parent if self.filePath else Path()
+        defaultOpenDirPath = self.filePath.parent \
+            if self.filePath.exists() else Path()
     if not silent:
         targetDirPath = QFileDialog.getExistingDirectory(
             self,
@@ -67,12 +68,12 @@ def importFolderImgs(self, dirpath):
 
     self.lastOpenDir = dirpath
     self.dirname = dirpath
-    self.filePath = None
+    self.filePath = nonePath
     self.fileListWidget.clear()
     self.mImgList = self.scanAllImages(dirpath)
     self.openNextImg()
     for imgPath in self.mImgList:
-        item = QListWidgetItem(imgPath)
+        item = QListWidgetItem(str(imgPath))
         self.fileListWidget.addItem(item)
 
 
@@ -86,14 +87,14 @@ def scanAllImages(self, folderPath):
         if file.suffix.lower() in extensions:
             images.append(file.absolute())
 
-    natural_sort(images, key=lambda x: x.lower())
+    natural_sort(images, key=lambda x: str(x).lower())
     return images
 
 
 def openPrevImg(self, _value=False):
     # Proceding prev image without dialog if having any label
     if self.autoSaving.isChecked():
-        if self.defaultSaveDir is not None:
+        if self.labelFolder is not nonePath:
             if self.dirty is True:
                 self.saveFile()
         else:
@@ -119,7 +120,7 @@ def openPrevImg(self, _value=False):
 def openNextImg(self, _value=False):
     # Proceding prev image without dialog if having any label
     if self.actions.autosaving.isChecked():
-        if self.defaultSaveDir is not None:
+        if self.labelFolder is not nonePath:
             if self.dirty is True:
                 self.saveFile()
         else:
@@ -133,7 +134,7 @@ def openNextImg(self, _value=False):
         return
 
     filename = None
-    if self.filePath is None:
+    if self.filePath is nonePath:
         filename = self.mImgList[0]
     else:
         currIndex = self.mImgList.index(self.filePath)
@@ -204,10 +205,10 @@ def loadFile(self, filePath=None):
 
         # Label xml file and show bound box according to its filename
         # if self.usingPascalVocFormat is True:
-        if self.labelFolder is not None:
+        if self.labelFolder is not nonePath:
             basename = self.filePath.stem
-            xmlPath = self.filePath / Path(basename + XML_EXT) 
-            txtPath = os.path.join(self.labelFolder, basename + TXT_EXT)
+            xmlPath = self.labelFolder / Path(basename + XML_EXT)
+            txtPath = self.labelFolder / Path(basename + TXT_EXT)
 
             """Annotation file priority:
             PascalXML > YOLO
@@ -230,8 +231,8 @@ def loadFile(self, filePath=None):
 
 
 def changeSaveFolderDialog(self, _value=False):
-    if self.defaultSaveDir is not None:
-        path = self.defaultSaveDir
+    if self.labelFolder is not nonePath:
+        path = self.labelFolder
     else:
         path = '.'
 
@@ -241,24 +242,23 @@ def changeSaveFolderDialog(self, _value=False):
         path,
         QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
 
-    if dirpath is not None and len(dirpath) > 1:
-        self.defaultSaveDir = dirpath
+    if dirpath is not nonePath and len(dirpath) > 1:
+        self.labelFolder = dirpath
 
     self.statusBar().showMessage(
         '%s . Annotation will be saved to %s' %
-        ('Change saved folder', self.defaultSaveDir))
+        ('Change saved folder', self.labelFolder))
     self.statusBar().show()
 
 
 def saveFile(self, _value=False):
-    if self.defaultSaveDir is not None and len(self.defaultSaveDir):
+    if self.labelFolder is not nonePath:
         if self.filePath:
-            imgFileName = os.path.basename(self.filePath)
-            savedFileName = os.path.splitext(imgFileName)[0]
-            savedPath = os.path.join(self.defaultSaveDir, savedFileName)
-            self.selectSaveFile(savedPath)
+            imgFileName = self.filePath.stem
+            savedPath = self.labelFolder / Path(imgFileName)
+            self.initiateSaveProcess(savedPath)
     else:
-        self.selectSaveFile(
+        self.initiateSaveProcess(
             self.labelFile.labelPath if self.labelFile
             else self.saveFileDialog(removeExt=False))
 
@@ -267,25 +267,26 @@ def saveFileDialog(self, removeExt=True):
     caption = '%s - Choose File' % self.appname
     filters = 'File (*%s)' % LabelFile.suffix
     openDialogPath = self.currentPath()
-    dlg = QFileDialog(self, caption, openDialogPath, filters)
+    dlg = QFileDialog(self, caption, str(openDialogPath), filters)
     dlg.setDefaultSuffix(LabelFile.suffix[1:])
     dlg.setAcceptMode(QFileDialog.AcceptSave)
-    filenameWithoutExtension = os.path.splitext(self.filePath)[0]
-    dlg.selectFile(filenameWithoutExtension)
+    filenameWithoutExtension = self.filePath.with_suffix('')
+    dlg.selectFile(str(filenameWithoutExtension))
     dlg.setOption(QFileDialog.DontUseNativeDialog, False)
     if dlg.exec_():
-        fullFilePath = dlg.selectedFiles()[0]
+        fullFilePath = Path(dlg.selectedFiles()[0])
         if removeExt:
             # Return file path without the extension.
-            return os.path.splitext(fullFilePath)[0]
+            return fullFilePath.with_suffix('')
         else:
             return fullFilePath
     return ''
 
 
-def selectSaveFile(self, annotationFilePath):
+def initiateSaveProcess(self, annotationFilePath):
     if annotationFilePath and self.saveLabels(annotationFilePath):
         self.dirty = False
+        self.labelFolder = annotationFilePath.parent
         self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
         self.statusBar().show()
 
@@ -307,8 +308,8 @@ def saveLabels(self, annotationFilePath):
     # Can add differrent annotation formats here
     try:
         if self.usePascalVocFormat is True:
-            if annotationFilePath[-4:].lower() != ".xml":
-                annotationFilePath += XML_EXT
+            if annotationFilePath.suffix.lower() != ".xml":
+                annotationFilePath = annotationFilePath.with_suffix(XML_EXT)
             self.labelFile.savePascalVocFormat(
                 annotationFilePath,
                 shapes,
@@ -317,8 +318,8 @@ def saveLabels(self, annotationFilePath):
                 self.lineColor.getRgb(),
                 self.fillColor.getRgb())
         elif self.useYoloFormat is True:
-            if annotationFilePath[-4:].lower() != ".txt":
-                annotationFilePath += TXT_EXT
+            if annotationFilePath.suffix.lower() != ".txt":
+                annotationFilePath = annotationFilePath.with_suffix(TXT_EXT)
             self.labelFile.saveYoloFormat(
                 annotationFilePath,
                 shapes,
@@ -328,8 +329,8 @@ def saveLabels(self, annotationFilePath):
                 self.lineColor.getRgb(),
                 self.fillColor.getRgb())
         elif self.useBoxSupFormat is True:
-            if annotationFilePath[-4:].lower() != ".png":
-                annotationFilePath += PNG_EXT
+            if annotationFilePath.suffix.lower() != ".png":
+                annotationFilePath = annotationFilePath.with_suffix(PNG_EXT)
             self.labelFile.saveBoxSupFormat(
                 annotationFilePath,
                 shapes,
@@ -364,7 +365,7 @@ def loadPredefinedClasses(self, predefClassesFile):
 def fileitemDoubleClicked(self, item=None):
     if not self.mayContinue():
         return
-    currIndex = self.mImgList.index(item.text())
+    currIndex = self.mImgList.index(Path(item.text()))
     if currIndex < len(self.mImgList):
         filename = self.mImgList[currIndex]
         if filename:
@@ -376,7 +377,7 @@ def mayContinue(self):
 
 
 def currentPath(self):
-    return os.path.dirname(self.filePath) if self.filePath else '.'
+    return self.filePath.parent if self.filePath else '.'
 
 
 def read(filename, default=None):
