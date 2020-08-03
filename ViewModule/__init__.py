@@ -320,8 +320,9 @@ class StartWindow(QMainWindow, WindowMixin):
         get_changesavefolder, get_saveformat
     from ._filehandler import openFile, openFolder, loadFile, mayContinue, \
         importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
-        fileitemDoubleClicked, saveFile, changeSaveFolderDialog,\
-        selectSaveFile, saveFileDialog, currentPath, saveLabels
+        fileitemDoubleClicked, saveFile, changeSaveFolderDialog, \
+        initiateSaveProcess, saveFileDialog, currentPath, saveLabels, \
+        loadPascalXMLByFilename, loadYOLOTXTByFilename
     from ._label import addLabel
     from ._events import status
 
@@ -445,6 +446,36 @@ class StartWindow(QMainWindow, WindowMixin):
         self.canvas.scale = 0.01 * self.zoomWidget.value()
         self.canvas.adjustSize()
         self.canvas.update()
+
+    def loadLabels(self, shapes):
+        s = []
+        for label, points, line_color, fill_color, difficult in shapes:
+            shape = Shape(label=label)
+            for x, y in points:
+
+                # Ensure the labels are within the bounds of the image. If not, fix them.
+                x, y, snapped = self.canvas.snapPointToCanvas(x, y)
+                if snapped:
+                    self.setDirty()
+
+                shape.addPoint(QPointF(x, y))
+            shape.difficult = difficult
+            shape.close()
+            s.append(shape)
+
+            if line_color:
+                shape.line_color = QColor(*line_color)
+            else:
+                shape.line_color = generateColorByText(label)
+
+            if fill_color:
+                shape.fill_color = QColor(*fill_color)
+            else:
+                shape.fill_color = generateColorByText(label)
+
+            self.addLabel(shape)
+        # self.updateComboBox()
+        self.canvas.loadShapes(s)
 
     def __loadPredefinedClasses(self, predefClassesFile):
         if Path(predefClassesFile).exists():

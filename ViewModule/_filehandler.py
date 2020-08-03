@@ -362,6 +362,33 @@ def loadPredefinedClasses(self, predefClassesFile):
                     self.labelHist.append(line)
 
 
+def loadPascalXMLByFilename(self, xmlPath):
+    if self.filePath is nonePath:
+        return
+    if not xmlPath.is_file():
+        return
+
+    self.set_format(FORMAT_PASCALVOC)
+
+    tVocParseReader = PascalVocReader(xmlPath)
+    shapes = tVocParseReader.getShapes()
+    self.loadLabels(shapes)
+    self.canvas.verified = tVocParseReader.verified
+
+
+def loadYOLOTXTByFilename(self, txtPath):
+    if self.filePath is nonePath:
+        return
+    if not txtPath.is_file():
+        return
+
+    self.set_format(FORMAT_YOLO)
+    tYoloParseReader = YoloReader(txtPath, self.image)
+    shapes = tYoloParseReader.getShapes()
+    self.loadLabels(shapes)
+    self.canvas.verified = tYoloParseReader.verified
+
+
 def fileitemDoubleClicked(self, item=None):
     if not self.mayContinue():
         return

@@ -157,6 +157,11 @@ class Canvas(QWidget):
         self.shapes = []
         self.repaint()
 
+    def loadShapes(self, shapes):
+        self.shapes = list(shapes)
+        self.current = None
+        self.repaint()
+
     def handleDrawing(self, pos):
         if self.current and self.current.reachMaxPoints() is False:
             initPos = self.current[0]
@@ -220,6 +225,22 @@ class Canvas(QWidget):
     def setDrawingColor(self, qColor):
         self.drawingLineColor = qColor
         self.drawingRectColor = qColor
+
+    def snapPointToCanvas(self, x, y):
+        """
+        Moves a point x,y to within the boundaries of the canvas.
+        :return: (x,y,snapped) where snapped is True if x or y were changed,
+        False if not.
+        """
+        if x < 0 or x > self.pixmap.width() or \
+           y < 0 or y > self.pixmap.height():
+            x = max(x, 0)
+            y = max(y, 0)
+            x = min(x, self.pixmap.width())
+            y = min(y, self.pixmap.height())
+            return x, y, True
+
+        return x, y, False
 
     ###########################################################################
     #                               E V E N T S                               #
