@@ -21,6 +21,8 @@
 <file alias="format_boxsup">resources/icons/format_boxsup.png</file>
 <file alias="format_voc">resources/icons/format_voc.png</file>
 <file alias="format_yolo">resources/icons/format_yolo.png</file>
+<file alias="prev">resources/icons/prev.png</file>
+<file alias="next">resources/icons/next.png</file>
 
 <!-- ==============STRINGS============== -->
 

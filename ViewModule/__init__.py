@@ -190,6 +190,8 @@ class StartWindow(QMainWindow, WindowMixin):
         changesavefolder = self.get_changesavefolder()
         autosaving = self.get_autosaving()
         saveformat = self.get_saveformat()
+        openNextImg = self.get_openNextImg()
+        openPrevImg = self.get_openPrevImg()
 
         # Manage Window Zoom
         zoom = self.get_zoom()
@@ -205,9 +207,12 @@ class StartWindow(QMainWindow, WindowMixin):
             zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
             start=start, fitWindow=fitWindow, fitWidth=fitWidth,
             autosaving=autosaving, save=save, saveformat=saveformat,
-            changesavefolder=changesavefolder,
+            changesavefolder=changesavefolder, openNextImg=openNextImg,
+            openPrevImg=openPrevImg,
             fileMenuActions=(
                 open,
+                openfolder,
+                start,
                 quit),
             beginner=(),
             advanced=(),
@@ -216,7 +221,7 @@ class StartWindow(QMainWindow, WindowMixin):
                 start,),
             beginnerContext=(),
             advancedContext=(),
-            onLoadActive=(),
+            onLoadActive=(start, ),
             onShapesPresent=(),
             zoomActions=(
                 self.zoomWidget, zoomIn, zoomOut, zoomOrg, fitWindow, fitWidth)
@@ -245,6 +250,8 @@ class StartWindow(QMainWindow, WindowMixin):
             save,
             saveformat,
             autosaving,
+            openNextImg,
+            openPrevImg,
             quit,
         ))
         addActions(self.menus.edit, (
@@ -291,7 +298,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.statusBar().addPermanentWidget(self.labelCoordinates)
 
         # Resize and Position Application
-        size = settings.get(SETTING_WIN_SIZE, QSize(600, 500))
+        size = settings.get(SETTING_WIN_SIZE, QSize(820, 800))
         position = QPoint(0, 0)
         saved_position = settings.get(SETTING_WIN_POSE, position)
         for i in range(QApplication.desktop().screenCount()):
@@ -317,12 +324,12 @@ class StartWindow(QMainWindow, WindowMixin):
     from ._actions import get_open, get_openfolder, get_quit, create_classes, \
         get_classes, get_startlabel, get_zoom,  get_zoomin, get_zoomout, \
         get_zoomorg, get_fitwindow, get_fitwidth, get_autosaving, get_save, \
-        get_changesavefolder, get_saveformat
+        get_changesavefolder, get_saveformat, get_openNextImg, get_openPrevImg
     from ._filehandler import openFile, openFolder, loadFile, mayContinue, \
         importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
         fileitemDoubleClicked, saveFile, changeSaveFolderDialog, \
         initiateSaveProcess, saveFileDialog, currentPath, saveLabels, \
-        loadPascalXMLByFilename, loadYOLOTXTByFilename
+        loadPascalXMLByFilename, loadYOLOTXTByFilename, createLabelFolderFile
     from ._label import addLabel
     from ._events import status
 
@@ -453,7 +460,8 @@ class StartWindow(QMainWindow, WindowMixin):
             shape = Shape(label=label)
             for x, y in points:
 
-                # Ensure the labels are within the bounds of the image. If not, fix them.
+                # Ensure the labels are within the bounds of the image. 
+                # If not, fix them.
                 x, y, snapped = self.canvas.snapPointToCanvas(x, y)
                 if snapped:
                     self.setDirty()
@@ -495,8 +503,8 @@ class StartWindow(QMainWindow, WindowMixin):
         for z in self.actions.zoomActions:
             if z is not None:
                 z.setEnabled(value)
-        # for action in self.actions.onLoadActive:
-        #     action.setEnabled(value)
+        for action in self.actions.onLoadActive:
+            action.setEnabled(value)
 
     def set_format(self, save_format):
         if save_format == FORMAT_PASCALVOC:
