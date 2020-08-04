@@ -288,8 +288,19 @@ def initiateSaveProcess(self, annotationFilePath):
     if annotationFilePath and self.saveLabels(annotationFilePath):
         self.dirty = False
         self.labelFolder = annotationFilePath.parent
+        self.createLabelFolderFile()
         self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
         self.statusBar().show()
+
+
+def createLabelFolderFile(self):
+    labelFolderFile = QFile('LabelLocattion.txt')
+    directory = QDir(str(self.filePath.parent))
+    file = QFile(directory.filePath(labelFolderFile.fileName()))
+    file.open(QIODevice.WriteOnly)
+    fileStream = QTextStream(file)
+    fileStream << str(self.labelFolder)
+    file.close()
 
 
 def saveLabels(self, annotationFilePath):
