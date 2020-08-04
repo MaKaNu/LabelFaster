@@ -119,7 +119,7 @@ class Canvas(QWidget):
         self.deSelectShape()
         shape.selected = True
         self.selectedShape = shape
-        self.setHiding()
+        # self.setHiding()
         self.selectionChanged.emit(True)
         self.update()
 
@@ -351,6 +351,37 @@ class Canvas(QWidget):
                 and Qt.ControlModifier & ev.modifiers():
             pass
 
+        for shape in reversed([s for s in self.shapes if self.isVisible(s)]):
+            # Look for a nearby vertex to highlight. If that fails,
+            # check if we happen to be inside a shape.
+            index = shape.nearestVertex(pos, self.epsilon)
+            if index is not None:
+                if self.selectedVertex():
+                    self.hShape.highlightClear()
+                self.hVertex, self.hShape = index, shape
+                shape.highlightVertex(index, shape.MOVE_VERTEX)
+                self.overrideCursor(CURSOR_POINT)
+                self.setToolTip("Click & drag to move point")
+                self.setStatusTip(self.toolTip())
+                self.update()
+                break
+            elif shape.containsPoint(pos):
+                if self.selectedVertex():
+                    self.hShape.highlightClear()
+                self.hVertex, self.hShape = None, shape
+                self.setToolTip(
+                    "Click & drag to move shape '%s'" % shape.label)
+                self.setStatusTip(self.toolTip())
+                self.overrideCursor(CURSOR_GRAB)
+                self.update()
+                break
+        else:  # Nothing found, clear highlights, reset state.
+            if self.hShape:
+                self.hShape.highlightClear()
+                self.update()
+            self.hVertex, self.hShape = None, None
+            self.overrideCursor(CURSOR_DEFAULT)
+
     def mousePressEvent(self, ev):
         pos = self.transformPos(ev.pos())
 
@@ -574,13 +605,13 @@ class Canvas(QWidget):
             raise ValueError(x, self.__getStr('dictE'))
 
     def __setHShape(self, x):
-        if isinstance(x, Shape):
+        if isinstance(x, Shape) or x is None:
             self.__hShape = x
         else:
             raise ValueError(x, self.__getStr('shapeE'))
 
     def __setHVertex(self, x):
-        if isinstance(x, int):
+        if isinstance(x, int) or x is None:
             self.__hVertex = x
         else:
             raise ValueError(x, self.__getStr('intE'))
