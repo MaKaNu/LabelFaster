@@ -1,8 +1,12 @@
 import os
+from os import path
 
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QImage, QPainter, QColor
+
+from libs.utils import nonePath, generateColorByText
+from pathlib import Path
 
 PNG_EXT = '.png'
 
@@ -57,12 +61,11 @@ class BOXSUPWriter(QWidget):
         out_file = None  # Update yolo .txt
         out_class_file = None   # Update class list .txt
 
-        if targetFile is None:
+        if targetFile is nonePath:
             out_file = self.filename
         else:
             out_file = targetFile
-        classesFile = os.path.join(
-                os.path.dirname(os.path.abspath(self.filename)), "classes.txt")
+        classesFile = targetFile.parent / Path('classes_bxsp.txt')
         out_class_file = open(classesFile, 'w')
 
         image = self.BndBox2BoxSupImg(self.boxlist, classList)
@@ -70,7 +73,8 @@ class BOXSUPWriter(QWidget):
         image.save(str(out_file))
 
         for c in classList:
-            out_class_file.write(c+'\n')
+            color = generateColorByText(c).getRgb()[:-1]
+            out_class_file.write(c+' ' + str(color) + '\n')
 
         out_class_file.close()
 

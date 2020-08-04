@@ -12,6 +12,7 @@ from libs.boxsup_io import BOXSUPReader, PNG_EXT
 
 from libs.messages import discardChangesDialog
 from libs.constants import *
+from libs.messages import errorMessage
 
 import os
 import codecs
@@ -20,7 +21,7 @@ import codecs
 def openFile(self):
     if not self.mayContinue():
         return
-    path = self.filePath.parents[0] if self.filePath else Path()
+    path = self.filePath.parent if self.filePath.resolve() else Path()
     formats = [
         '*.%s' % fmt.data().decode("ascii").lower()
         for fmt in QImageReader.supportedImageFormats()]
@@ -93,7 +94,7 @@ def scanAllImages(self, folderPath):
 
 def openPrevImg(self, _value=False):
     # Proceding prev image without dialog if having any label
-    if self.autoSaving.isChecked():
+    if self.actions.autosaving.isChecked():
         if self.labelFolder is not nonePath:
             if self.dirty is True:
                 self.saveFile()
@@ -145,11 +146,11 @@ def openNextImg(self, _value=False):
         self.loadFile(filename)
 
 
-def loadFile(self, filePath=None):
+def loadFile(self, filePath=nonePath):
     """Load the specified file, or the last opened file if None."""
     self.resetState()
     # self.canvas.setEnabled(False)
-    if filePath is None:
+    if filePath is nonePath:
         filePath = self.settings.get(SETTING_FILENAME)
     else:
         filePath = Path(filePath)
@@ -236,13 +237,13 @@ def changeSaveFolderDialog(self, _value=False):
     else:
         path = '.'
 
-    dirpath = QFileDialog.getExistingDirectory(
+    dirpath = Path(QFileDialog.getExistingDirectory(
         self,
         '%s - Save annotations to the directory' % self.appname,
-        path,
-        QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
+        str(path),
+        QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks))
 
-    if dirpath is not nonePath and len(dirpath) > 1:
+    if dirpath is not nonePath and dirpath.exists():
         self.labelFolder = dirpath
 
     self.statusBar().showMessage(
@@ -337,6 +338,14 @@ def saveLabels(self, annotationFilePath):
                 self.filePath,
                 self.imageData,
                 self.labelHist,
+                self.lineColor.getRgb(),
+                self.fillColor.getRgb())
+            annotationFilePath = annotationFilePath.with_suffix('.xml')
+            self.labelFile.savePascalVocFormat(
+                annotationFilePath,
+                shapes,
+                self.filePath,
+                self.imageData,
                 self.lineColor.getRgb(),
                 self.fillColor.getRgb())
         else:

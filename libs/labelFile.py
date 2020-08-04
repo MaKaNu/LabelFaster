@@ -106,16 +106,13 @@ class LabelFile(object):
     def toggleVerify(self):
         self.verified = not self.verified
 
-    def changeExt(self, ext):
-        self.suffix = ext
-
     def changePath(self, path):
         self.labelPath = path
 
     @staticmethod
     def isLabelFile(filename):
-        labelPath = filename.parent
-        return labelPath.resolve() == LabelFile.labelPath.resolve()
+        suffix = filename.suffix.lower()
+        return suffix == LabelFile.suffix and suffix is not '.png'
 
     @staticmethod
     def convertPoints2BndBox(points):
