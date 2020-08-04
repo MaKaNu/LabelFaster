@@ -163,7 +163,8 @@ def loadFile(self, filePath=nonePath):
             try:
                 self.labelFile = LabelFile(absoluteFilePath)
             except LabelFileError as e:
-                self.errorMessage(u'Error opening file', (
+                errorMessage(self,
+                    u'Error opening file', (
                     u"<p><b>%s</b></p>"
                     u"<p>Make sure <i>%s</i> is a valid label file."
                     ) % (e, absoluteFilePath)
@@ -171,8 +172,14 @@ def loadFile(self, filePath=nonePath):
                 self.status("Error reading %s" % absoluteFilePath)
                 return False
             self.imageData = self.labelFile.imageData
-            self.lineColor = QColor(*self.labelFile.lineColor)
-            self.fillColor = QColor(*self.labelFile.fillColor)
+            try:
+                self.lineColor = QColor(*self.labelFile.lineColor)
+            except AttributeError:
+                self.lineColor = QColor(45, 168, 179)
+            try:
+                self.fillColor = QColor(*self.labelFile.fillColor)
+            except AttributeError:
+                self.fillColor = QColor(45, 168, 179)
             self.canvas.verified = self.labelFile.verified
         else:
             # Load image:
@@ -184,7 +191,8 @@ def loadFile(self, filePath=nonePath):
 
         image = QImage.fromData(self.imageData)
         if image.isNull():
-            self.errorMessage(
+            errorMessage(
+                self,
                 u'Error opening file',
                 u"<p>Make sure <i>%s</i> is a valid image file."
                 % absoluteFilePath
