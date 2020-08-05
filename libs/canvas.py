@@ -141,6 +141,55 @@ class Canvas(QWidget):
                 self.calculateOffsets(shape, point)
                 return
 
+    def boundedMoveVertex(self, pos):
+        index, shape = self.hVertex, self.hShape
+        point = shape[index]
+        if self.outOfPixmap(pos):
+            size = self.pixmap.size()
+            clipped_x = min(max(0, pos.x()), size.width())
+            clipped_y = min(max(0, pos.y()), size.height())
+            pos = QPointF(clipped_x, clipped_y)
+
+        shiftPos = pos - point
+
+        shape.moveVertexBy(index, shiftPos)
+
+        lindex = (index + 1) % 4
+        rindex = (index + 3) % 4
+        lshift = None
+        rshift = None
+        if index % 2 == 0:
+            rshift = QPointF(shiftPos.x(), 0)
+            lshift = QPointF(0, shiftPos.y())
+        else:
+            lshift = QPointF(shiftPos.x(), 0)
+            rshift = QPointF(0, shiftPos.y())
+        shape.moveVertexBy(rindex, rshift)
+        shape.moveVertexBy(lindex, lshift)
+
+    def boundedMoveShape(self, shape, pos):
+        if self.outOfPixmap(pos):
+            return False  # No need to move
+        o1 = pos + self.offsets[0]
+        if self.outOfPixmap(o1):
+            pos -= QPointF(min(0, o1.x()), min(0, o1.y()))
+        o2 = pos + self.offsets[1]
+        if self.outOfPixmap(o2):
+            pos += QPointF(min(0, self.pixmap.width() - o2.x()),
+                           min(0, self.pixmap.height() - o2.y()))
+        # The next line tracks the new position of the cursor
+        # relative to the shape, but also results in making it
+        # a bit "shaky" when nearing the border and allows it to
+        # go outside of the shape's area for some reason. XXX
+        # self.calculateOffsets(self.selectedShape, pos)
+
+        dp = pos - self.prevPoint
+        if dp:
+            shape.moveBy(dp)
+            self.prevPoint = pos
+            return True
+        return False
+
     def deSelectShape(self):
         if self.selectedShape:
             self.selectedShape.selected = False
@@ -151,6 +200,18 @@ class Canvas(QWidget):
 
     def selectedVertex(self):
         return self.hVertex is not None
+
+    def calculateOffsets(self, shape, point):
+        rect = shape.boundingRect()
+        x1 = rect.x() - point.x()
+        y1 = rect.y() - point.y()
+        x2 = (rect.x() + rect.width()) - point.x()
+        y2 = (rect.y() + rect.height()) - point.y()
+        self.offsets = QPointF(x1, y1), QPointF(x2, y2)
+
+    def setShapeVisible(self, shape, value):
+        self.visible[shape] = value
+        self.repaint()
 
     ###########################################################################
     #                              D R A W I N G                              #
