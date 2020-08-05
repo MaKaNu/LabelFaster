@@ -10,14 +10,14 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="27.000074mm"
-   height="27.000095mm"
-   viewBox="0 0 27.000074 27.000095"
+   width="37.063919mm"
+   height="37.063919mm"
+   viewBox="0 0 37.063919 37.063919"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
    sodipodi:docname="ledred.svg"
-   inkscape:export-filename="D:\Mitarbeiter\Kaupenjohann\09_GIT\ROISA\resources\icons\greenLED.png"
+   inkscape:export-filename="D:\Mitarbeiter\Kaupenjohann\09_GIT\ROISA\resources\icons\redLED.png"
    inkscape:export-xdpi="38"
    inkscape:export-ydpi="38">
   <defs
@@ -100,7 +100,7 @@
          id="feGaussianBlur1151" />
     </filter>
     <filter
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Blur"
        id="filter1458">
       <feGaussianBlur
@@ -137,9 +137,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.959798"
-     inkscape:cx="15.562154"
-     inkscape:cy="51.397948"
+     inkscape:zoom="2.8"
+     inkscape:cx="52.450252"
+     inkscape:cy="60.834678"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -168,7 +168,7 @@
      inkscape:label="Ebene 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-86.368791,-120.79213)">
+     transform="translate(-81.336868,-115.76022)">
     <path
        style="opacity:1;fill:url(#radialGradient2049);fill-opacity:1;stroke:none;stroke-width:0.37143514;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke fill markers"
        id="path2041"
