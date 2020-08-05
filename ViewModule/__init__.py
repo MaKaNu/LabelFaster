@@ -79,6 +79,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.__itemsToShapes = {}
         self.__shapesToItems = {}
         self.__prevLabelText = ''
+        self.__noSelectionSlot = False
 
         # Application state.
         self.__selectedClass = None
@@ -652,6 +653,9 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getFillColor(self):
         return self.__fillColor
 
+    def __getNoSelectionSlot(self):
+        return self.__noSelectionSlot
+
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
@@ -783,6 +787,12 @@ class StartWindow(QMainWindow, WindowMixin):
         else:
             raise ValueError(x, self.__getStr('qcolorE'))
 
+    def __setNoSelectionSlot(self, x):
+        if isinstance(x, bool):
+            self.__noSelectionSlot = x
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
+
     ###########################################################################
     #                           P R O P E R T I E S                           #
     ###########################################################################
@@ -813,3 +823,4 @@ class StartWindow(QMainWindow, WindowMixin):
     useBoxSupFormat = property(__getUBoxSupFormat, __setUBoxSupFormat)
     lineColor = property(__getLineColor, __setLineColor)
     fillColor = property(__getFillColor, __setFillColor)
+    noSelectionSlot = property(__getNoSelectionSlot, __setNoSelectionSlot)
