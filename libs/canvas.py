@@ -18,15 +18,17 @@ CURSOR_GRAB = Qt.OpenHandCursor
 class Canvas(QWidget):
     drawingPolygon = pyqtSignal(bool)
     newShape = pyqtSignal()
+    selectionChanged = pyqtSignal(bool)  # TODO CHECK THIS SIGNAL
+    shapeMoved = pyqtSignal()  # TODO CHECK THIS SIGNAL
 
-    CREATE, EDIT = list(range(2))
+    CREATE, EDIT, IDLE = list(range(3))
 
     epsilon = 11.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__pixmap = QPixmap()
-        self.__mode = self.EDIT
+        self.__mode = self.IDLE
         self.__current = None
         self.__hShape = None
         self.__hVertex = None
@@ -34,9 +36,11 @@ class Canvas(QWidget):
         self.__drawingLineColor = QColor(45, 168, 179)
         self.__drawingRectColor = QColor(45, 168, 179)
         self.__line = Shape(line_color=self.drawingLineColor)
+        self.__prevPoint = QPointF()
         self.__selectedShape = None
         self.__verified = False
         self.__hideBackground = False
+        self.__toggleBackground = False
         self.__visible = {}
         self.scale = 1.0
         self._painter = QPainter()
