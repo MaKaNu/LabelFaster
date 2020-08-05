@@ -329,15 +329,30 @@ class Canvas(QWidget):
         """Update line with last point and current coordinates."""
         pos = self.transformPos(ev.pos())
 
+        if Qt.ControlModifier & ev.modifiers():
+            self.setEditing(True)
+            currentMode = 'EDITING'
+        elif self.mode == self.IDLE:
+            currentMode = 'IDLE'
+        else:
+            self.setEditing(False)
+            if self.hShape:
+                self.hShape.highlightClear()
+            self.update()
+            self.hVertex, self.hShape = None, None
+            currentMode = 'CREATING'
+
         # Update coordinates in status bar if image is opened
         window = self.parent().window()
         if window.filePath is not None:
             self.parent().window().labelCoordinates.setText(
-                'X: %d; Y: %d' % (pos.x(), pos.y()))
+                'MODE: %s X: %d; Y: %d' % (currentMode, pos.x(), pos.y()))
 
         # Polygon drawing.
         if self.drawing():
             self.overrideCursor(CURSOR_DRAW)
+            if self.hShape:
+                self.hShape.highlightClear()
             if self.current:
                 # Display annotation width and height while drawing
                 currentWidth = abs(self.current[0].x() - pos.x())
@@ -439,7 +454,7 @@ class Canvas(QWidget):
         else:  # Nothing found, clear highlights, reset state.
             if self.hShape:
                 self.hShape.highlightClear()
-                self.update()
+            self.update()
             self.hVertex, self.hShape = None, None
             self.overrideCursor(CURSOR_DEFAULT)
 
@@ -449,6 +464,10 @@ class Canvas(QWidget):
         if Qt.LeftButton & ev.buttons():
             if self.drawing():
                 self.handleDrawing(pos)
+                self.deSelectShape()
+                if self.selectedVertex():
+                    self.hShape.highlightClear()
+                self.update()
             else:
                 self.selectShapePoint(pos)
                 self.prevPoint = pos
