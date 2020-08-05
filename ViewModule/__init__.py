@@ -335,7 +335,7 @@ class StartWindow(QMainWindow, WindowMixin):
             self.labelFolder = LabelDir
             self.statusBar().showMessage(
                 '%s started. Annotation will be saved to %s' %
-                (self.appname, self.defaultSaveDir))
+                (self.appname, self.labelFolder))
             self.statusBar().show()
 
         self.restoreState(settings.get(SETTING_WIN_STATE, QByteArray()))
