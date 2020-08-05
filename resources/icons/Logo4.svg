@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
+   width="12mm"
+   height="12mm"
+   viewBox="0 0 12 12"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
-   sodipodi:docname="Logo4.svg">
+   sodipodi:docname="Logo4.svg"
+   inkscape:export-filename="D:\Mitarbeiter\Kaupenjohann\09_GIT\ROISA\resources\icons\Logo4.png"
+   inkscape:export-xdpi="300.56665"
+   inkscape:export-ydpi="300.56665">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -26,10 +29,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="8"
-     inkscape:cx="268.33068"
-     inkscape:cy="562.64312"
+     inkscape:cx="7.3200552"
+     inkscape:cy="9.5452402"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g1462"
      showgrid="true"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -42,7 +45,9 @@
      inkscape:window-maximized="1">
     <inkscape:grid
        type="xygrid"
-       id="grid815" />
+       id="grid815"
+       originx="-69.059059"
+       originy="-146.34048" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -59,7 +64,8 @@
   <g
      inkscape:label="Ebene 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-69.059061,-138.65952)">
     <g
        id="g1454"
        transform="translate(-0.1403165,-0.30401909)">
@@ -68,16 +74,18 @@
         <flowRoot
            xml:space="preserve"
            id="flowRoot817"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;"
            transform="matrix(0.26458333,0,0,0.26458333,18.166481,14.502534)"><flowRegion
-             id="flowRegion819"><rect
+             id="flowRegion819"
+             style="fill:#000000;fill-opacity:1;"><rect
                id="rect821"
                width="245.6693"
                height="198.4252"
                x="198.4252"
-               y="470.55118" /></flowRegion><flowPara
+               y="470.55118"
+               style="fill:#000000;fill-opacity:1;" /></flowRegion><flowPara
              id="flowPara823"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;font-family:Nasalization;-inkscape-font-specification:Nasalization">L</flowPara></flowRoot>        <text
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;font-family:Nasalization;-inkscape-font-specification:Nasalization;fill:#000000;fill-opacity:1;">L</flowPara></flowRoot>        <text
            xml:space="preserve"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#2da8b3;fill-opacity:1;stroke:none;stroke-width:0.26458332"
            x="72.535454"
