@@ -112,7 +112,7 @@ class LabelFile(object):
     @staticmethod
     def isLabelFile(filename):
         suffix = filename.suffix.lower()
-        return suffix == LabelFile.suffix and suffix is not '.png'
+        return suffix == LabelFile.suffix and suffix != '.png'
 
     @staticmethod
     def convertPoints2BndBox(points):
