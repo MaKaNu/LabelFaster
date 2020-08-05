@@ -13,6 +13,8 @@ from libs.boxsup_io import BOXSUPReader, PNG_EXT
 from libs.messages import discardChangesDialog
 from libs.constants import *
 from libs.messages import errorMessage
+from libs.utils import newIcon
+from functools import partial
 
 import os
 import codecs
@@ -163,10 +165,12 @@ def loadFile(self, filePath=nonePath):
             try:
                 self.labelFile = LabelFile(absoluteFilePath)
             except LabelFileError as e:
-                errorMessage(self,
-                    u'Error opening file', (
-                    u"<p><b>%s</b></p>"
-                    u"<p>Make sure <i>%s</i> is a valid label file."
+                errorMessage(
+                    self,
+                    u'Error opening file',
+                    (
+                        u"<p><b>%s</b></p>"
+                        u"<p>Make sure <i>%s</i> is a valid label file."
                     ) % (e, absoluteFilePath)
                     )
                 self.status("Error reading %s" % absoluteFilePath)
@@ -209,7 +213,7 @@ def loadFile(self, filePath=nonePath):
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
         self.paintCanvas()
-        # self.addRecentFile(self.filePath)
+        self.addRecentFile(self.filePath)
         self.toggleActions(True)
 
         # Label xml file and show bound box according to its filename
@@ -270,6 +274,37 @@ def saveFile(self, _value=False):
         self.initiateSaveProcess(
             self.labelFile.labelPath if self.labelFile
             else self.saveFileDialog(removeExt=False))
+
+
+def addRecentFile(self, filePath):
+    if filePath in self.recentFiles:
+        self.recentFiles.remove(filePath)
+    elif len(self.recentFiles) >= self.maxRecent:
+        self.recentFiles.pop()
+    self.recentFiles.insert(0, filePath)
+
+
+def loadRecent(self, filename):
+    if self.mayContinue():
+        self.loadFile(filename)
+
+
+def updateFileMenu(self):
+    currFilePath = self.filePath
+
+    def exists(filename):
+        return os.path.exists(filename)
+    menu = self.menus.recentFiles
+    menu.clear()
+    files = [
+        f for f in self.recentFiles if f !=
+        currFilePath and exists(f)]
+    for i, f in enumerate(files):
+        icon = newIcon('labels')
+        action = QAction(
+            icon, '&%d %s' % (i + 1, QFileInfo(str(f)).fileName()), self)
+        action.triggered.connect(partial(self.loadRecent, f))
+        menu.addAction(action)
 
 
 def saveFileDialog(self, removeExt=True):

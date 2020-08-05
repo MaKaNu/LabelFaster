@@ -2,13 +2,15 @@ import pickle
 import os
 import sys
 
+from libs.utils import nonePath
+
 
 class Settings(object):
     def __init__(self):
         # Be default, the home will be in the same folder as labelImg
         home = os.path.expanduser("~")
         self.data = {}
-        self.path = os.path.join(home, '.roisaSettings.pkl')
+        self.path = os.path.join(home, '.LabelFasterSettings.pkl')
 
     def __setitem__(self, key, value):
         self.data[key] = value

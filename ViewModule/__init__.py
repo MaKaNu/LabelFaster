@@ -1,4 +1,3 @@
-from os import DirEntry
 from pathlib import Path
 import codecs
 
@@ -91,6 +90,8 @@ class StartWindow(QMainWindow, WindowMixin):
         self.__labelFolder = defaultLabelFolder
         self.__lastOpenFolder = nonePath
         self.__loadPredefinedClasses(defaultPredefClassFile)
+        self.__recentFiles = []
+        self.__maxRecent = 7
 
         # Application state
         self.__lineColor = None
@@ -196,6 +197,11 @@ class StartWindow(QMainWindow, WindowMixin):
         openNextImg = self.get_openNextImg()
         openPrevImg = self.get_openPrevImg()
 
+        # Load Settings
+        autosaving.setChecked(settings.get(SETTING_AUTO_SAVE, False))
+        if settings.get(SETTING_RECENT_FILES):
+            self.recentFiles = settings.get(SETTING_RECENT_FILES)
+
         # Manage Window Zoom
         zoom = self.get_zoom()
         zoomIn = self.get_zoomin()
@@ -250,6 +256,7 @@ class StartWindow(QMainWindow, WindowMixin):
             open,
             openfolder,
             changesavefolder,
+            self.menus.recentFiles,
             save,
             saveformat,
             autosaving,
@@ -270,6 +277,8 @@ class StartWindow(QMainWindow, WindowMixin):
         # hideAll, showAll, None,
         # zoomIn, zoomOut, zoomOrg, None,
         # addActions(self.menus.help, (help, showInfo))
+
+        self.menus.file.aboutToShow.connect(self.updateFileMenu)
 
         # Create Toolbars
         self.tools = self.toolbar('Tools', position='left')
@@ -312,6 +321,25 @@ class StartWindow(QMainWindow, WindowMixin):
         self.resize(size)
         self.move(position)
 
+        # Load Default Save settings
+        LabelDir = settings.get(SETTING_LABEL_DIR, nonePath)
+        if LabelDir is None:
+            LabelDir = nonePath  # TODO make nonePath pickable
+        TemplastOpenFolder = settings.get(SETTING_LAST_OPEN_FOLDER, nonePath)
+        if TemplastOpenFolder is None:
+            self.lastOpenFolder = nonePath  # TODO make nonePath picklable
+        else:
+            self.lastOpenFolder = TemplastOpenFolder
+        if self.labelFolder is nonePath and LabelDir is not nonePath and \
+                LabelDir.exists():
+            self.labelFolder = LabelDir
+            self.statusBar().showMessage(
+                '%s started. Annotation will be saved to %s' %
+                (self.appname, self.defaultSaveDir))
+            self.statusBar().show()
+
+        self.restoreState(settings.get(SETTING_WIN_STATE, QByteArray()))
+
         Shape.line_color = self.lineColor = QColor(
             settings.get(SETTING_LINE_COLOR, DEFAULT_LINE_COLOR))
         Shape.fill_color = self.fillColor = QColor(
@@ -332,7 +360,8 @@ class StartWindow(QMainWindow, WindowMixin):
         importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
         fileitemDoubleClicked, saveFile, changeSaveFolderDialog, \
         initiateSaveProcess, saveFileDialog, currentPath, saveLabels, \
-        loadPascalXMLByFilename, loadYOLOTXTByFilename, createLabelFolderFile
+        loadPascalXMLByFilename, loadYOLOTXTByFilename, \
+        createLabelFolderFile, addRecentFile, loadRecent, updateFileMenu
     from ._label import addLabel
     from ._events import status
 
@@ -458,6 +487,42 @@ class StartWindow(QMainWindow, WindowMixin):
         return None
 
     ###########################################################################
+    #                               E V E N T S                               #
+    ###########################################################################
+
+    def closeEvent(self, event):
+        if not self.mayContinue():
+            event.ignore()
+        settings = self.settings
+        # If it loads images from dir, don't load it at the begining
+        if self.foldername is nonePath:
+            settings[SETTING_FILENAME] = self.filePath if self.filePath else ''
+        else:
+            settings[SETTING_FILENAME] = nonePath
+
+        settings[SETTING_WIN_SIZE] = self.size()
+        settings[SETTING_WIN_POSE] = self.pos()
+        settings[SETTING_WIN_STATE] = self.saveState()
+        settings[SETTING_LINE_COLOR] = self.lineColor
+        settings[SETTING_FILL_COLOR] = self.fillColor
+        settings[SETTING_RECENT_FILES] = self.recentFiles
+        if self.labelFolder and self.labelFolder.exists():
+            settings[SETTING_LABEL_DIR] = self.labelFolder
+        else:
+            settings[SETTING_LABEL_DIR] = None
+
+        if self.lastOpenFolder and self.lastOpenFolder.exists():
+            settings[SETTING_LAST_OPEN_FOLDER] = self.lastOpenFolder
+        else:
+            settings[SETTING_LAST_OPEN_FOLDER] = None
+
+        settings[SETTING_AUTO_SAVE] = self.actions.autosaving.isChecked()
+        # settings[SETTING_SINGLE_CLASS] = self.singleClassMode.isChecked()
+        # settings[SETTING_PAINT_LABEL] = self.displayLabelOption.isChecked()
+        # settings[SETTING_DRAW_SQUARE] = self.drawSquaresOption.isChecked()
+        settings.save()
+
+    ###########################################################################
     #                              M E T H O D S                              #
     ###########################################################################
 
@@ -510,7 +575,7 @@ class StartWindow(QMainWindow, WindowMixin):
             shape = Shape(label=label)
             for x, y in points:
 
-                # Ensure the labels are within the bounds of the image. 
+                # Ensure the labels are within the bounds of the image.
                 # If not, fix them.
                 x, y, snapped = self.canvas.snapPointToCanvas(x, y)
                 if snapped:
@@ -656,6 +721,12 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getNoSelectionSlot(self):
         return self.__noSelectionSlot
 
+    def __getRecentFiles(self):
+        return self.__recentFiles
+
+    def __getMaxRecent(self):
+        return self.__maxRecent
+
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
@@ -793,6 +864,18 @@ class StartWindow(QMainWindow, WindowMixin):
         else:
             raise ValueError(x, self.__getStr('boolE'))
 
+    def __setRecentFiles(self, x):
+        if isinstance(x, list):
+            self.__recentFiles = x
+        else:
+            raise ValueError(x, self.__getStr('listE'))
+
+    def __setMaxRecent(self, x):
+        if isinstance(x, int):
+            self.__maxRecent = x
+        else:
+            raise ValueError(x, self.__getStr('intE'))
+
     ###########################################################################
     #                           P R O P E R T I E S                           #
     ###########################################################################
@@ -824,3 +907,5 @@ class StartWindow(QMainWindow, WindowMixin):
     lineColor = property(__getLineColor, __setLineColor)
     fillColor = property(__getFillColor, __setFillColor)
     noSelectionSlot = property(__getNoSelectionSlot, __setNoSelectionSlot)
+    recentFiles = property(__getRecentFiles, __setRecentFiles)
+    maxRecent = property(__getMaxRecent, __setMaxRecent)
