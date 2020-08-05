@@ -389,7 +389,7 @@ class Canvas(QWidget):
             return
 
         # Polygon copy moving.
-        if Qt.RightButton & ev.buttons():
+        if Qt.RightButton & ev.buttons() and False:
             if self.selectedShapeCopy and self.prevPoint:
                 self.overrideCursor(CURSOR_MOVE)
                 self.boundedMoveShape(self.selectedShapeCopy, pos)
