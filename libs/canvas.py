@@ -227,6 +227,14 @@ class Canvas(QWidget):
         self.current = None
         self.repaint()
 
+    def hideBackroundShapes(self, value):
+        self.toggleBackground = value
+        if self.selectedShape:
+            # Only hide other shapes if there is a current selection.
+            # Otherwise the user will not be able to select a shape.
+            self.setHiding(True)
+            self.repaint()
+
     def handleDrawing(self, pos):
         if self.current and self.current.reachMaxPoints() is False:
             initPos = self.current[0]
@@ -243,12 +251,12 @@ class Canvas(QWidget):
             self.current = Shape()
             self.current.addPoint(pos)
             self.line.points = [pos, pos]
-            # self.setHiding()
+            self.setHiding()
             self.drawingPolygon.emit(True)
             self.update()
 
-    # def setHiding(self, enable=True):
-        # self._hideBackround = self.hideBackround if enable else False
+    def setHiding(self, enable=True):
+        self.hideBackground = self.toggleBackground if enable else False
 
     def finalise(self):
         assert self.current
@@ -260,7 +268,7 @@ class Canvas(QWidget):
         self.current.close()
         self.shapes.append(self.current)
         self.current = None
-        self.hideBackground = False
+        self.setHiding(False)
         self.newShape.emit()
         self.update()
 
