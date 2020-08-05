@@ -3,7 +3,7 @@
 
 <!-- ===============ICONS=============== -->
 
-<file alias="logo">resources/icons/Logo3.png</file>
+<file alias="logo">resources/icons/Logo4.png</file>
 <file alias="red">resources/icons/redLED.png</file>
 <file alias="green">resources/icons/greenLED.png</file>
 <file alias="off">resources/icons/offLED.png</file>

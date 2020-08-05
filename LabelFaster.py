@@ -13,7 +13,7 @@ from libs.utils import nonePath, newIcon
 
 from ViewModule import StartWindow
 
-__appname__ = 'ROISA - Region of Interest Selector Automat'
+__appname__ = 'LF - Label Faster'
 
 
 def get_main_app(argv=[]):
