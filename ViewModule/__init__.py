@@ -163,6 +163,8 @@ class StartWindow(QMainWindow, WindowMixin):
         # /____/ /_/  _\__, / /_/ /_/\__,_/ /_/  /____/
 
         self.canvas.newShape.connect(self.newShape)
+        self.canvas.shapeMoved.connect(self.shapeMoved)
+        self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
 
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.boxDock)
@@ -406,6 +408,53 @@ class StartWindow(QMainWindow, WindowMixin):
                 self.labelHist.append(text)
         else:
             self.canvas.resetAllLines()
+
+    def shapeMoved(self):
+        self.dirty = True
+
+    def shapeSelectionChanged(self, selected=False):
+        if self.noSelectionSlot:
+            self.noSelectionSlot = False
+        else:
+            shape = self.canvas.selectedShape
+            if shape:
+                self.shapesToItems[shape].setSelected(True)
+            else:
+                self.labelList.clearSelection()
+        # self.actions.delete.setEnabled(selected)
+        # self.actions.copy.setEnabled(selected)
+        # self.actions.edit.setEnabled(selected)
+        # self.actions.shapeLineColor.setEnabled(selected)
+        # self.actions.shapeFillColor.setEnabled(selected)
+
+    ###########################################################################
+    #                     L A B E L L I S T M E T H O D S                     #
+    ###########################################################################
+
+    def labelSelectionChanged(self):
+        item = self.currentItem()
+        if item:  # and self.canvas.editing():
+            self.noSelectionSlot = True
+            self.canvas.selectShape(self.itemsToShapes[item])
+            shape = self.itemsToShapes[item]
+            # Add Chris
+            # self.diffcButton.setChecked(shape.difficult)
+
+    def labelItemChanged(self, item):
+        shape = self.itemsToShapes[item]
+        label = item.text()
+        if label != shape.label:
+            shape.label = item.text()
+            shape.line_color = generateColorByText(shape.label)
+            self.setDirty()
+        else:  # User probably changed item visibility
+            self.canvas.setShapeVisible(shape, item.checkState() == Qt.Checked)
+
+    def currentItem(self):
+        items = self.labelList.selectedItems()
+        if items:
+            return items[0]
+        return None
 
     ###########################################################################
     #                              M E T H O D S                              #
