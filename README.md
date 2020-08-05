@@ -1,4 +1,4 @@
-# ROISA - Region of Intereset Selector Automat
+# LF - LabelFaster
 
 run: pyrcc5 -o libs/resources.py resources.qrc
 
