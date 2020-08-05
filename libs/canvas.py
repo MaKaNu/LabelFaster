@@ -412,18 +412,6 @@ class Canvas(QWidget):
                 self.repaint()
             return
 
-        # Action if left button and controll are set
-        # needs to be implemented.
-        if Qt.LeftButton & ev.buttons()\
-                and Qt.ControlModifier & ev.modifiers():
-            pass
-
-        # Action if right button and controll are set
-        # needs to be implemented.
-        if Qt.RightButton & ev.buttons()\
-                and Qt.ControlModifier & ev.modifiers():
-            pass
-
         for shape in reversed([s for s in self.shapes if self.isVisible(s)]):
             # Look for a nearby vertex to highlight. If that fails,
             # check if we happen to be inside a shape.
