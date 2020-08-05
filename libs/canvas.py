@@ -578,6 +578,9 @@ class Canvas(QWidget):
     def __getLine(self):
         return self.__line
 
+    def __getPrevPoint(self):
+        return self.__prevPoint
+
     def __getDrawingLineColor(self):
         return self.__drawingLineColor
 
@@ -589,6 +592,9 @@ class Canvas(QWidget):
 
     def __getHideBackground(self):
         return self.__hideBackground
+
+    def __getToggleBackground(self):
+        return self.__toggleBackground
 
     def __getVisible(self):
         return self.__visible
@@ -647,6 +653,12 @@ class Canvas(QWidget):
         else:
             raise ValueError(x, self.__getStr('shapeE'))
 
+    def __setPrevPoint(self, x):
+        if isinstance(x, QPointF):
+            self.__prevPoint = x
+        else:
+            raise ValueError(x, self.__getStr('qpointfE'))
+
     def __setdrawingLineColor(self, x):
         if isinstance(x, QColor):
             self.__drawingLineColor = x
@@ -668,6 +680,12 @@ class Canvas(QWidget):
     def __setHideBackground(self, x):
         if isinstance(x, bool):
             self.__hideBackground = x
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
+
+    def __setToggleBackground(self, x):
+        if isinstance(x, bool):
+            self.__toggleBackground = x
         else:
             raise ValueError(x, self.__getStr('boolE'))
 
@@ -698,10 +716,12 @@ class Canvas(QWidget):
     mode = property(__getMode, __setMode)
     current = property(__getCurrent, __setCurrent)
     line = property(__getLine, __setLine)
+    prevPoint = property(__getPrevPoint, __setPrevPoint)
     drawingLineColor = property(__getDrawingLineColor, __setdrawingLineColor)
     drawingRectColor = property(__getDrawingRectColor, __setdrawingRectColor)
     selectedShape = property(__getSelectedShape, __setSelectedShape)
     hideBackground = property(__getHideBackground, __setHideBackground)
+    toggleBackground = property(__getToggleBackground, __setToggleBackground)
     visible = property(__getVisible, __setVisible)
     hShape = property(__getHShape, __setHShape)
     hVertex = property(__getHVertex, __setHVertex)
