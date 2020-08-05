@@ -5,6 +5,7 @@ from xml.etree.ElementTree import Element, SubElement
 from lxml import etree
 import codecs
 from libs.constants import DEFAULT_ENCODING
+from libs.utils import nonePath
 
 XML_EXT = '.xml'
 ENCODE_METHOD = DEFAULT_ENCODING
@@ -58,9 +59,9 @@ class PascalVocWriter:
         filename = SubElement(top, 'filename')
         filename.text = self.filename
 
-        if self.localImgPath is not None:
+        if self.localImgPath is not nonePath:
             localImgPath = SubElement(top, 'path')
-            localImgPath.text = self.localImgPath
+            localImgPath.text = str(self.localImgPath)
 
         source = SubElement(top, 'source')
         database = SubElement(source, 'database')
@@ -134,7 +135,7 @@ class PascalVocReader:
         # shapes type:
         # [labbel, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color, difficult]
         self.shapes = []
-        self.filepath = filepath
+        self.filepath = str(filepath)
         self.verified = False
         try:
             self.parseXML()

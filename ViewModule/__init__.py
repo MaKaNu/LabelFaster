@@ -50,33 +50,36 @@ class StartWindow(QMainWindow, WindowMixin):
     def __init__(
             self,
             appname='defaultName',
-            defaultFilename=None,
-            defaultPredefClassFile=None,
-            defaultSaveDir=None):
+            defaultFilename=nonePath,
+            defaultPredefClassFile=nonePath,
+            defaultImageFolder=nonePath,
+            defaultLabelFolder=nonePath):
         super().__init__()
         self.__appname = appname
         self.setWindowTitle(appname)
+
+        # Load string bundle for i18n
+        self.__stringBundle = StringBundle.getBundle()
+        def getStr(strId): return self.__stringBundle.getString(strId)
 
         # Load setting in the main thread
         self.settings = Settings()
         self.settings.load()
         settings = self.settings
 
-        # Standard QT Parameter
-        self.title = 'ROISA - Region of Interest Selector Automat'
-
         # Unsaved Status Flag
         self.__dirty = False
 
         # For loading all image under a directory
         self.__mImgList = []
-        self.__foldername = None
+        self.__foldername = nonePath
         self.__labelHist = []
 
         # Match Shapes and Labels
         self.__itemsToShapes = {}
         self.__shapesToItems = {}
         self.__prevLabelText = ''
+        self.__noSelectionSlot = False
 
         # Application state.
         self.__selectedClass = None
@@ -84,20 +87,16 @@ class StartWindow(QMainWindow, WindowMixin):
         # File and path informations
         self.__image = QImage()
         self.__filePath = defaultFilename
-        self.__defaultSaveDir = defaultSaveDir
-        self.__lastOpenFolder = None
+        self.__imageFolder = defaultImageFolder
+        self.__labelFolder = defaultLabelFolder
+        self.__lastOpenFolder = nonePath
         self.__loadPredefinedClasses(defaultPredefClassFile)
 
         # Application state
         self.__lineColor = None
         self.__fillColor = None
 
-        # Load string bundle for i18n
-        self.__stringBundle = StringBundle.getBundle()
-        def getStr(strId): return self.__stringBundle.getString(strId)
-
         # Save as Format Flags
-        self.__defaultSaveDir = defaultSaveDir
         self.__usePascalVocFormat = True
         self.__useYoloFormat = False
         self.__useBoxSupFormat = False
@@ -121,11 +120,11 @@ class StartWindow(QMainWindow, WindowMixin):
         self.labelList = QListWidget()
         labelListContainer = QWidget()
         labelListContainer.setLayout(listLayout)
-        # self.labelList.itemActivated.connect(self.labelSelectionChanged)
-        # self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
+        self.labelList.itemActivated.connect(self.labelSelectionChanged)
+        self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
         # self.labelList.itemDoubleClicked.connect(self.editLabel)
         # Connect to itemChanged to detect checkbox changes.
-        # self.labelList.itemChanged.connect(self.labelItemChanged)
+        self.labelList.itemChanged.connect(self.labelItemChanged)
         listLayout.addWidget(self.labelList)
 
         self.boxDock = QDockWidget(getStr('boxLabelText'), self)
@@ -165,6 +164,8 @@ class StartWindow(QMainWindow, WindowMixin):
         # /____/ /_/  _\__, / /_/ /_/\__,_/ /_/  /____/
 
         self.canvas.newShape.connect(self.newShape)
+        self.canvas.shapeMoved.connect(self.shapeMoved)
+        self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
 
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.boxDock)
@@ -192,6 +193,8 @@ class StartWindow(QMainWindow, WindowMixin):
         changesavefolder = self.get_changesavefolder()
         autosaving = self.get_autosaving()
         saveformat = self.get_saveformat()
+        openNextImg = self.get_openNextImg()
+        openPrevImg = self.get_openPrevImg()
 
         # Manage Window Zoom
         zoom = self.get_zoom()
@@ -207,9 +210,12 @@ class StartWindow(QMainWindow, WindowMixin):
             zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
             start=start, fitWindow=fitWindow, fitWidth=fitWidth,
             autosaving=autosaving, save=save, saveformat=saveformat,
-            changesavefolder=changesavefolder,
+            changesavefolder=changesavefolder, openNextImg=openNextImg,
+            openPrevImg=openPrevImg,
             fileMenuActions=(
                 open,
+                openfolder,
+                start,
                 quit),
             beginner=(),
             advanced=(),
@@ -218,7 +224,7 @@ class StartWindow(QMainWindow, WindowMixin):
                 start,),
             beginnerContext=(),
             advancedContext=(),
-            onLoadActive=(),
+            onLoadActive=(start, ),
             onShapesPresent=(),
             zoomActions=(
                 self.zoomWidget, zoomIn, zoomOut, zoomOrg, fitWindow, fitWidth)
@@ -247,6 +253,8 @@ class StartWindow(QMainWindow, WindowMixin):
             save,
             saveformat,
             autosaving,
+            openNextImg,
+            openPrevImg,
             quit,
         ))
         addActions(self.menus.edit, (
@@ -293,7 +301,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.statusBar().addPermanentWidget(self.labelCoordinates)
 
         # Resize and Position Application
-        size = settings.get(SETTING_WIN_SIZE, QSize(600, 500))
+        size = settings.get(SETTING_WIN_SIZE, QSize(820, 800))
         position = QPoint(0, 0)
         saved_position = settings.get(SETTING_WIN_POSE, position)
         for i in range(QApplication.desktop().screenCount()):
@@ -319,11 +327,12 @@ class StartWindow(QMainWindow, WindowMixin):
     from ._actions import get_open, get_openfolder, get_quit, create_classes, \
         get_classes, get_startlabel, get_zoom,  get_zoomin, get_zoomout, \
         get_zoomorg, get_fitwindow, get_fitwidth, get_autosaving, get_save, \
-        get_changesavefolder, get_saveformat
+        get_changesavefolder, get_saveformat, get_openNextImg, get_openPrevImg
     from ._filehandler import openFile, openFolder, loadFile, mayContinue, \
         importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
-        fileitemDoubleClicked, saveFile, changeSaveFolderDialog,\
-        selectSaveFile, saveFileDialog, currentPath, saveLabels
+        fileitemDoubleClicked, saveFile, changeSaveFolderDialog, \
+        initiateSaveProcess, saveFileDialog, currentPath, saveLabels, \
+        loadPascalXMLByFilename, loadYOLOTXTByFilename, createLabelFolderFile
     from ._label import addLabel
     from ._events import status
 
@@ -401,6 +410,53 @@ class StartWindow(QMainWindow, WindowMixin):
         else:
             self.canvas.resetAllLines()
 
+    def shapeMoved(self):
+        self.dirty = True
+
+    def shapeSelectionChanged(self, selected=False):
+        if self.noSelectionSlot:
+            self.noSelectionSlot = False
+        else:
+            shape = self.canvas.selectedShape
+            if shape:
+                self.shapesToItems[shape].setSelected(True)
+            else:
+                self.labelList.clearSelection()
+        # self.actions.delete.setEnabled(selected)
+        # self.actions.copy.setEnabled(selected)
+        # self.actions.edit.setEnabled(selected)
+        # self.actions.shapeLineColor.setEnabled(selected)
+        # self.actions.shapeFillColor.setEnabled(selected)
+
+    ###########################################################################
+    #                     L A B E L L I S T M E T H O D S                     #
+    ###########################################################################
+
+    def labelSelectionChanged(self):
+        item = self.currentItem()
+        if item:  # and self.canvas.editing():
+            self.noSelectionSlot = True
+            self.canvas.selectShape(self.itemsToShapes[item])
+            shape = self.itemsToShapes[item]
+            # Add Chris
+            # self.diffcButton.setChecked(shape.difficult)
+
+    def labelItemChanged(self, item):
+        shape = self.itemsToShapes[item]
+        label = item.text()
+        if label != shape.label:
+            shape.label = item.text()
+            shape.line_color = generateColorByText(shape.label)
+            self.setDirty()
+        else:  # User probably changed item visibility
+            self.canvas.setShapeVisible(shape, item.checkState() == Qt.Checked)
+
+    def currentItem(self):
+        items = self.labelList.selectedItems()
+        if items:
+            return items[0]
+        return None
+
     ###########################################################################
     #                              M E T H O D S                              #
     ###########################################################################
@@ -409,7 +465,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.itemsToShapes.clear()
         self.shapesToItems.clear()
         self.labelList.clear()
-        self.filePath = None
+        self.filePath = nonePath
         self.imageData = None
         self.labelFile = None
         self.canvas.resetState()
@@ -448,6 +504,37 @@ class StartWindow(QMainWindow, WindowMixin):
         self.canvas.adjustSize()
         self.canvas.update()
 
+    def loadLabels(self, shapes):
+        s = []
+        for label, points, line_color, fill_color, difficult in shapes:
+            shape = Shape(label=label)
+            for x, y in points:
+
+                # Ensure the labels are within the bounds of the image. 
+                # If not, fix them.
+                x, y, snapped = self.canvas.snapPointToCanvas(x, y)
+                if snapped:
+                    self.setDirty()
+
+                shape.addPoint(QPointF(x, y))
+            shape.difficult = difficult
+            shape.close()
+            s.append(shape)
+
+            if line_color:
+                shape.line_color = QColor(*line_color)
+            else:
+                shape.line_color = generateColorByText(label)
+
+            if fill_color:
+                shape.fill_color = QColor(*fill_color)
+            else:
+                shape.fill_color = generateColorByText(label)
+
+            self.addLabel(shape)
+        # self.updateComboBox()
+        self.canvas.loadShapes(s)
+
     def __loadPredefinedClasses(self, predefClassesFile):
         if Path(predefClassesFile).exists():
             with codecs.open(predefClassesFile, 'r', 'utf8') as f:
@@ -466,8 +553,8 @@ class StartWindow(QMainWindow, WindowMixin):
         for z in self.actions.zoomActions:
             if z is not None:
                 z.setEnabled(value)
-        # for action in self.actions.onLoadActive:
-        #     action.setEnabled(value)
+        for action in self.actions.onLoadActive:
+            action.setEnabled(value)
 
     def set_format(self, save_format):
         if save_format == FORMAT_PASCALVOC:
@@ -503,14 +590,23 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getFilePath(self):
         return self.__filePath
 
+    def __getImageFolder(self):
+        return self.__imageFolder
+
+    def __getLabelFolder(self):
+        return self.__labelFolder
+
+    def __getFoldername(self):
+        return self.__foldername
+
+    def __getLastOpenFolder(self):
+        return self.__lastOpenFolder
+
     def __getAppname(self):
         return self.__appname
 
     def __getCanvas(self):
         return self.__canvas
-
-    def __getDefaultSaveDir(self):
-        return self.__defaultSaveDir
 
     def __getImage(self):
         return self.__image
@@ -533,23 +629,14 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getDirty(self):
         return self.__dirty
 
-    def __getLastOpenFolder(self):
-        return self.__lastOpenFolder
-
     def __getMImgList(self):
         return self.__mImgList
-
-    def __getFoldername(self):
-        return self.__foldername
 
     def __getLabelHist(self):
         return self.__labelHist
 
     def __getFileListWidget(self):
         return self.__fileListWidget
-
-    def __getDefaultSaveDir(self):
-        return self.__defaultSaveDir
 
     def __getUPascalVocFormat(self):
         return self.__usePascalVocFormat
@@ -566,6 +653,9 @@ class StartWindow(QMainWindow, WindowMixin):
     def __getFillColor(self):
         return self.__fillColor
 
+    def __getNoSelectionSlot(self):
+        return self.__noSelectionSlot
+
     ###########################################################################
     #                               S E T T E R                               #
     ###########################################################################
@@ -576,14 +666,32 @@ class StartWindow(QMainWindow, WindowMixin):
             raise ValueError(x, self.__getStr('structE'))
 
     def __setFilePath(self, x):
-        if isinstance(x, str) or x is None:
+        if isinstance(x, Path) or x is nonePath:
             self.__filePath = x
         else:
             raise ValueError(x, self.__getStr('pathE'))
 
-    def __setDefaultSaveDir(self, x):
-        if isinstance(x, str) or x is None:
-            self.__defaultSaveDir = x
+    def __setImageFolder(self, x):
+        if isinstance(x, Path) or x is nonePath:
+            self.__imageFolder = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
+
+    def __setLabelFolder(self, x):
+        if isinstance(x, Path) or x is nonePath:
+            self.__labelFolder = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
+
+    def __setFoldername(self, x):
+        if isinstance(x, Path) or x is nonePath:
+            self.__foldername = x
+        else:
+            raise ValueError(x, self.__getStr('pathE'))
+
+    def __setLastOpenFolder(self, x):
+        if isinstance(x, Path) or x is nonePath:
+            self.__lastOpenFolder = x
         else:
             raise ValueError(x, self.__getStr('pathE'))
 
@@ -631,23 +739,11 @@ class StartWindow(QMainWindow, WindowMixin):
         else:
             raise ValueError(x, self.__getStr('strE'))
 
-    def __setLastOpenFolder(self, x):
-        if isinstance(x, str) or x is None:
-            self.__lastOpenFolder = x
-        else:
-            raise ValueError(x, self.__getStr('pathE'))
-
     def __setMImgList(self, x):
         if isinstance(x, list):
             self.__mImgList = x
         else:
             raise ValueError(x, self.__getStr('listE'))
-
-    def __setFoldername(self, x):
-        if isinstance(x, str):
-            self.__foldername = x
-        else:
-            raise ValueError(x, self.__getStr('strE'))
 
     def __setLabelHist(self, x):
         if isinstance(x, list):
@@ -660,12 +756,6 @@ class StartWindow(QMainWindow, WindowMixin):
             self.__fileListWidget = x
         else:
             raise ValueError(x, self.__getStr('qlistwidgetE'))
-
-    def __setDefaultSaveDir(self, x):
-        if isinstance(x, str) or x is None:
-            self.__defaultSaveDir = x
-        else:
-            raise ValueError(x, self.__getStr('strE'))
 
     def __setUPascalVocFormat(self, x):
         if isinstance(x, bool):
@@ -697,29 +787,40 @@ class StartWindow(QMainWindow, WindowMixin):
         else:
             raise ValueError(x, self.__getStr('qcolorE'))
 
+    def __setNoSelectionSlot(self, x):
+        if isinstance(x, bool):
+            self.__noSelectionSlot = x
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
+
     ###########################################################################
     #                           P R O P E R T I E S                           #
     ###########################################################################
 
     actions = property(__getActions, __setActions)
     filePath = property(__getFilePath, __setFilePath)
+    imageFolder = property(__getImageFolder, __setImageFolder)
+    labelFolder = property(__getLabelFolder, __setLabelFolder)
+    foldername = property(__getFoldername, __setFoldername)
+    lastOpenFolder = property(__getLastOpenFolder, __setLastOpenFolder)
+
     appname = property(__getAppname)
     canvas = property(__getCanvas)
     image = property(__getImage, __setImage)
-    defaultSaveDir = property(__getDefaultSaveDir, __setDefaultSaveDir)
+
     selectedClass = property(__getSelectedClass, __setSelectedClass)
     itemsToShapes = property(__getItemsToShapes, __setItemsToShapes)
     shapesToItems = property(__getShapesToItems, __setShapesToItems)
     prevLabelText = property(__getPrevLabelText, __setPrevLabelText)
     dirty = property(__getDirty, __setDirty)
-    lastOpenFolder = property(__getLastOpenFolder, __setLastOpenFolder)
+
     mImgList = property(__getMImgList, __setMImgList)
-    foldername = property(__getFoldername, __setFoldername)
     labelHist = property(__getLabelHist, __setLabelHist)
     fileListWidget = property(__getFileListWidget, __setFileListWidget)
-    defaultSaveDir = property(__getDefaultSaveDir, __setDefaultSaveDir)
+
     usePascalVocFormat = property(__getUPascalVocFormat, __setUPascalVocFormat)
     useYoloFormat = property(__getUYoloFormat, __setUYoloFormat)
     useBoxSupFormat = property(__getUBoxSupFormat, __setUBoxSupFormat)
     lineColor = property(__getLineColor, __setLineColor)
     fillColor = property(__getFillColor, __setFillColor)
+    noSelectionSlot = property(__getNoSelectionSlot, __setNoSelectionSlot)

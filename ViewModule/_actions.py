@@ -61,7 +61,8 @@ def get_startlabel(self):
         self.setCreateMode,
         'G',
         'start',
-        getStr('startFull'))
+        getStr('startFull'),
+        enabled=False)
     return startlabel
 
 
@@ -107,6 +108,29 @@ def get_autosaving(self):
     autosaving.setCheckable(True)
     autosaving.setChecked(self.settings.get(SETTING_AUTO_SAVE, False))
     return autosaving
+
+
+def get_openNextImg(self):
+    openNextImg = newAction(
+        self,
+        getStr('nextImg'),
+        self.openNextImg,
+        'd',
+        'next',
+        getStr('nextImgFull'))
+    return openNextImg
+
+
+def get_openPrevImg(self):
+    openPrevImg = newAction(
+        self,
+        getStr('prevImg'),
+        self.openPrevImg,
+        'a',
+        'prev',
+        getStr('prevImgFull'))
+    return openPrevImg
+
 
 
 def get_zoom(self):
