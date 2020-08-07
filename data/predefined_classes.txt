@@ -2,3 +2,5 @@ sand
 soil
 bedrock
 big rocks
+sky
+robot

@@ -9,15 +9,11 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
-# from models import image_loader, ROI_controller, KeyMonitor
-# from views import StartWindow, startApp
-
-from libs.utils import *
-# from libs.resources import *
+from libs.utils import nonePath, newIcon
 
 from ViewModule import StartWindow
 
-__appname__ = 'ROISA - Region of Interest Selector Automat'
+__appname__ = 'LF - Label Faster'
 
 
 def get_main_app(argv=[]):
@@ -33,12 +29,12 @@ def get_main_app(argv=[]):
     # Usage : labelImg.py image predefClassFile saveDir
     win = StartWindow(
         __appname__,
-        argv[1] if len(argv) >= 2 else None,
-        argv[2] if len(argv) >= 3 else (
+        Path(argv[1]) if len(argv) >= 2 else nonePath,
+        Path(argv[2]) if len(argv) >= 3 else (
             Path(argv[0]).parent /
             Path('data') /
             Path('predefined_classes.txt')),
-        argv[3] if len(argv) >= 4 else None)
+        Path(argv[3]) if len(argv) >= 4 else nonePath)
     win.show()
     return app, win
 
