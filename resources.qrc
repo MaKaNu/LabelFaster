@@ -23,6 +23,7 @@
 <file alias="format_yolo">resources/icons/format_yolo.png</file>
 <file alias="prev">resources/icons/prev.png</file>
 <file alias="next">resources/icons/next.png</file>
+<file alias="delete">resources/icons/delete.png</file>
 
 <!-- ==============STRINGS============== -->
 

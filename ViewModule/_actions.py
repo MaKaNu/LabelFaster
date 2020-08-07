@@ -66,6 +66,18 @@ def get_startlabel(self):
     return startlabel
 
 
+def get_delete(self):
+    delete = newAction(
+        self,
+        getStr('delBox'),
+        self.deleteSelectedShape,
+        'Delete',
+        'delete',
+        getStr('delBoxFull'),
+        enabled=False)
+    return delete
+
+
 def get_save(self):
     save = newAction(
         self,

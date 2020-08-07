@@ -190,6 +190,7 @@ class StartWindow(QMainWindow, WindowMixin):
         open = self.get_open()
         openfolder = self.get_openfolder()
         start = self.get_startlabel()
+        delete = self.get_delete()
         save = self.get_save()
         changesavefolder = self.get_changesavefolder()
         autosaving = self.get_autosaving()
@@ -221,16 +222,18 @@ class StartWindow(QMainWindow, WindowMixin):
             fileMenuActions=(
                 open,
                 openfolder,
-                start,
                 quit),
             beginner=(),
             advanced=(),
             classes=(),
             editMenu=(
-                start,),
+                start,
+                delete),
             beginnerContext=(),
             advancedContext=(),
-            onLoadActive=(start, ),
+            onLoadActive=(
+                start,
+                delete),
             onShapesPresent=(),
             zoomActions=(
                 self.zoomWidget, zoomIn, zoomOut, zoomOrg, fitWindow, fitWidth)
@@ -265,7 +268,7 @@ class StartWindow(QMainWindow, WindowMixin):
             quit,
         ))
         addActions(self.menus.edit, (
-            start,
+            start, delete
         ))
         addActions(self.menus.view, (
             zoomIn, zoomOut, zoomOrg, None, fitWindow, fitWidth
@@ -284,7 +287,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.tools = self.toolbar('Tools', position='left')
         self.classtools = self.toolbar('Classes', position='top')
         self.actions.beginner = (
-            open, openfolder, saveformat, None, start,
+            open, openfolder, changesavefolder, saveformat, None, start,
             None, zoomIn, zoom, zoomOrg, zoomOut, fitWindow,
             fitWidth, None,  quit
             )
@@ -355,7 +358,8 @@ class StartWindow(QMainWindow, WindowMixin):
     from ._actions import get_open, get_openfolder, get_quit, create_classes, \
         get_classes, get_startlabel, get_zoom,  get_zoomin, get_zoomout, \
         get_zoomorg, get_fitwindow, get_fitwidth, get_autosaving, get_save, \
-        get_changesavefolder, get_saveformat, get_openNextImg, get_openPrevImg
+        get_changesavefolder, get_saveformat, get_openNextImg, get_openPrevImg, \
+        get_delete
     from ._filehandler import openFile, openFolder, loadFile, mayContinue, \
         importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
         fileitemDoubleClicked, saveFile, changeSaveFolderDialog, \
@@ -412,6 +416,25 @@ class StartWindow(QMainWindow, WindowMixin):
                 self.classes.activeClass
                 ).setIcon(newIcon('red'))
         setattr(self.classes, 'activeClass', name)
+
+    def deleteSelectedShape(self):
+        self.remLabel(self.canvas.deleteSelected())
+        self.dirty = True
+        if self.noShapes():
+            for action in self.actions.onShapesPresent:
+                action.setEnabled(False)
+
+    def remLabel(self, shape):
+        if shape is None:
+            return
+        item = self.shapesToItems[shape]
+        self.labelList.takeItem(self.labelList.row(item))
+        del self.shapesToItems[shape]
+        del self.itemsToShapes[item]
+        # self.updateComboBox()
+
+    def noShapes(self):
+        return not self.itemsToShapes
 
     ###########################################################################
     #                        S I G N A L M E T H O D S                        #
