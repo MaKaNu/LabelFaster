@@ -19,6 +19,7 @@ from libs.labelFile import LabelFile
 from libs.yolo_io import TXT_EXT
 from libs.pascal_io import XML_EXT
 from libs.boxsup_io import PNG_EXT
+from libs.messages import noClassMessage
 
 
 class WindowMixin(object):
@@ -167,6 +168,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.canvas.newShape.connect(self.newShape)
         self.canvas.shapeMoved.connect(self.shapeMoved)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
+        self.canvas.finishedDrawing.connect(self.finishedDrawing)
 
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.boxDock)
@@ -480,6 +482,10 @@ class StartWindow(QMainWindow, WindowMixin):
         # self.actions.shapeLineColor.setEnabled(selected)
         # self.actions.shapeFillColor.setEnabled(selected)
 
+    def finishedDrawing(self):
+        if self.classes.activeClass is None:
+            noClassMessage(self)
+
     ###########################################################################
     #                     L A B E L L I S T M E T H O D S                     #
     ###########################################################################
@@ -519,9 +525,10 @@ class StartWindow(QMainWindow, WindowMixin):
         settings = self.settings
         # If it loads images from dir, don't load it at the begining
         if self.foldername is nonePath:
-            settings[SETTING_FILENAME] = self.filePath if self.filePath else ''
+            settings[SETTING_FILENAME] = self.filePath if \
+                self.filePath.resolve() else ''
         else:
-            settings[SETTING_FILENAME] = nonePath
+            settings[SETTING_FILENAME] = ''
 
         settings[SETTING_WIN_SIZE] = self.size()
         settings[SETTING_WIN_POSE] = self.pos()

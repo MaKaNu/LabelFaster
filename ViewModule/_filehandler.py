@@ -10,9 +10,8 @@ from libs.pascal_io import PascalVocReader, XML_EXT
 from libs.yolo_io import YoloReader, TXT_EXT
 from libs.boxsup_io import BOXSUPReader, PNG_EXT
 
-from libs.messages import discardChangesDialog
+from libs.messages import discardChangesDialog, errorMessage
 from libs.constants import *
-from libs.messages import errorMessage
 from libs.utils import newIcon
 from functools import partial
 
@@ -430,8 +429,8 @@ def loadPascalXMLByFilename(self, xmlPath):
         return
     if not xmlPath.is_file():
         return
-
-    self.set_format(FORMAT_PASCALVOC)
+    if not self.useBoxSupFormat:
+        self.set_format(FORMAT_PASCALVOC)
 
     tVocParseReader = PascalVocReader(xmlPath)
     shapes = tVocParseReader.getShapes()
@@ -445,7 +444,9 @@ def loadYOLOTXTByFilename(self, txtPath):
     if not txtPath.is_file():
         return
 
-    self.set_format(FORMAT_YOLO)
+    if not self.useBoxSupFormat:
+        self.set_format(FORMAT_YOLO)
+
     tYoloParseReader = YoloReader(txtPath, self.image)
     shapes = tYoloParseReader.getShapes()
     self.loadLabels(shapes)

@@ -18,8 +18,9 @@ CURSOR_GRAB = Qt.OpenHandCursor
 class Canvas(QWidget):
     drawingPolygon = pyqtSignal(bool)
     newShape = pyqtSignal()
-    selectionChanged = pyqtSignal(bool)  # TODO CHECK THIS SIGNAL
-    shapeMoved = pyqtSignal()  # TODO CHECK THIS SIGNAL
+    selectionChanged = pyqtSignal(bool)
+    shapeMoved = pyqtSignal()
+    finishedDrawing = pyqtSignal()
 
     CREATE, EDIT, IDLE = list(range(3))
 
@@ -29,6 +30,7 @@ class Canvas(QWidget):
         super().__init__(*args, **kwargs)
         self.__pixmap = QPixmap()
         self.__mode = self.IDLE
+        self.__prevmode = self.IDLE
         self.__current = None
         self.__hShape = None
         self.__hVertex = None
@@ -197,6 +199,14 @@ class Canvas(QWidget):
             self.setHiding(False)
             self.selectionChanged.emit(False)
             self.update()
+
+    def deleteSelected(self):
+        if self.selectedShape:
+            shape = self.selectedShape
+            self.shapes.remove(self.selectedShape)
+            self.selectedShape = None
+            self.update()
+            return shape
 
     def selectedVertex(self):
         return self.hVertex is not None
@@ -403,60 +413,62 @@ class Canvas(QWidget):
             self.repaint()
             return
 
-        # Polygon copy moving.
-        if Qt.RightButton & ev.buttons() and False:
-            if self.selectedShapeCopy and self.prevPoint:
-                self.overrideCursor(CURSOR_MOVE)
-                self.boundedMoveShape(self.selectedShapeCopy, pos)
-                self.repaint()
-            elif self.selectedShape:
-                self.selectedShapeCopy = self.selectedShape.copy()
-                self.repaint()
-            return
+        if self.editing():
+            # Polygon copy moving.
+            if Qt.RightButton & ev.buttons() and False:
+                if self.selectedShapeCopy and self.prevPoint:
+                    self.overrideCursor(CURSOR_MOVE)
+                    self.boundedMoveShape(self.selectedShapeCopy, pos)
+                    self.repaint()
+                elif self.selectedShape:
+                    self.selectedShapeCopy = self.selectedShape.copy()
+                    self.repaint()
+                return
 
-        # Polygon/Vertex moving.
-        if Qt.LeftButton & ev.buttons():
-            if self.selectedVertex():
-                self.boundedMoveVertex(pos)
-                self.shapeMoved.emit()
-                self.repaint()
-            elif self.selectedShape and self.prevPoint:
-                self.overrideCursor(CURSOR_MOVE)
-                self.boundedMoveShape(self.selectedShape, pos)
-                self.shapeMoved.emit()
-                self.repaint()
-            return
+            # Polygon/Vertex moving.
+            if Qt.LeftButton & ev.buttons():
+                if self.selectedVertex():
+                    self.boundedMoveVertex(pos)
+                    self.shapeMoved.emit()
+                    self.repaint()
+                elif self.selectedShape and self.prevPoint:
+                    self.overrideCursor(CURSOR_MOVE)
+                    self.boundedMoveShape(self.selectedShape, pos)
+                    self.shapeMoved.emit()
+                    self.repaint()
+                return
 
-        for shape in reversed([s for s in self.shapes if self.isVisible(s)]):
-            # Look for a nearby vertex to highlight. If that fails,
-            # check if we happen to be inside a shape.
-            index = shape.nearestVertex(pos, self.epsilon)
-            if index is not None:
-                if self.selectedVertex():
+            for shape in reversed(
+                    [s for s in self.shapes if self.isVisible(s)]):
+                # Look for a nearby vertex to highlight. If that fails,
+                # check if we happen to be inside a shape.
+                index = shape.nearestVertex(pos, self.epsilon)
+                if index is not None:
+                    if self.selectedVertex():
+                        self.hShape.highlightClear()
+                    self.hVertex, self.hShape = index, shape
+                    shape.highlightVertex(index, shape.MOVE_VERTEX)
+                    self.overrideCursor(CURSOR_POINT)
+                    self.setToolTip("Click & drag to move point")
+                    self.setStatusTip(self.toolTip())
+                    self.update()
+                    break
+                elif shape.containsPoint(pos):
+                    if self.selectedVertex():
+                        self.hShape.highlightClear()
+                    self.hVertex, self.hShape = None, shape
+                    self.setToolTip(
+                        "Click & drag to move shape '%s'" % shape.label)
+                    self.setStatusTip(self.toolTip())
+                    self.overrideCursor(CURSOR_GRAB)
+                    self.update()
+                    break
+            else:  # Nothing found, clear highlights, reset state.
+                if self.hShape:
                     self.hShape.highlightClear()
-                self.hVertex, self.hShape = index, shape
-                shape.highlightVertex(index, shape.MOVE_VERTEX)
-                self.overrideCursor(CURSOR_POINT)
-                self.setToolTip("Click & drag to move point")
-                self.setStatusTip(self.toolTip())
                 self.update()
-                break
-            elif shape.containsPoint(pos):
-                if self.selectedVertex():
-                    self.hShape.highlightClear()
-                self.hVertex, self.hShape = None, shape
-                self.setToolTip(
-                    "Click & drag to move shape '%s'" % shape.label)
-                self.setStatusTip(self.toolTip())
-                self.overrideCursor(CURSOR_GRAB)
-                self.update()
-                break
-        else:  # Nothing found, clear highlights, reset state.
-            if self.hShape:
-                self.hShape.highlightClear()
-            self.update()
-            self.hVertex, self.hShape = None, None
-            self.overrideCursor(CURSOR_DEFAULT)
+                self.hVertex, self.hShape = None, None
+                self.overrideCursor(CURSOR_DEFAULT)
 
     def mousePressEvent(self, ev):
         pos = self.transformPos(ev.pos())
@@ -493,6 +505,7 @@ class Canvas(QWidget):
         elif Qt.LeftButton == ev.button():
             pos = self.transformPos(ev.pos())
             if self.drawing():
+                self.finishedDrawing.emit()
                 self.handleDrawing(pos)
 
     def paintEvent(self, event):
