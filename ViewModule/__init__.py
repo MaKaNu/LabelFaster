@@ -360,8 +360,8 @@ class StartWindow(QMainWindow, WindowMixin):
     from ._actions import get_open, get_openfolder, get_quit, create_classes, \
         get_classes, get_startlabel, get_zoom,  get_zoomin, get_zoomout, \
         get_zoomorg, get_fitwindow, get_fitwidth, get_autosaving, get_save, \
-        get_changesavefolder, get_saveformat, get_openNextImg, get_openPrevImg, \
-        get_delete
+        get_changesavefolder, get_saveformat, get_openNextImg, \
+        get_openPrevImg, get_delete
     from ._filehandler import openFile, openFolder, loadFile, mayContinue, \
         importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
         fileitemDoubleClicked, saveFile, changeSaveFolderDialog, \
@@ -399,6 +399,7 @@ class StartWindow(QMainWindow, WindowMixin):
         self.adjustScale()
 
     def changeFormat(self):
+        self.dirty = True
         if self.usePascalVocFormat:
             self.set_format(FORMAT_YOLO)
         elif self.useYoloFormat:
