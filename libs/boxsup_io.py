@@ -56,7 +56,7 @@ class BOXSUPWriter(QWidget):
         painter.end()
         return image
 
-    def save(self, classList=[], targetFile=None):
+    def save(self, classList=[], targetFile=nonePath):
 
         out_file = None  # Update yolo .txt
         out_class_file = None   # Update class list .txt
@@ -65,6 +65,9 @@ class BOXSUPWriter(QWidget):
             out_file = self.filename
         else:
             out_file = targetFile
+        out_file = out_file.parent / \
+            (out_file.stem + '_label' + out_file.suffix)
+
         classesFile = targetFile.parent / Path('classes_bxsp.txt')
         out_class_file = open(classesFile, 'w')
 
