@@ -75,9 +75,10 @@ class BOXSUPWriter(QWidget):
 
         image.save(str(out_file))
 
+        out_class_file.write('Class,R,G,B\n')
         for c in classList:
             color = generateColorByText(c).getRgb()[:-1]
-            out_class_file.write(c+' ' + str(color) + '\n')
+            out_class_file.write(c + ', ' + str(color)[1:-1] + '\n')
 
         out_class_file.close()
 

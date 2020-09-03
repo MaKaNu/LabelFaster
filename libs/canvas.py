@@ -473,7 +473,7 @@ class Canvas(QWidget):
     def mousePressEvent(self, ev):
         pos = self.transformPos(ev.pos())
 
-        if Qt.LeftButton & ev.buttons():
+        if Qt.LeftButton == ev.button():
             if self.drawing():
                 self.handleDrawing(pos)
                 self.deSelectShape()
@@ -488,16 +488,16 @@ class Canvas(QWidget):
             pass
 
     def mouseReleaseEvent(self, ev):
-        if Qt.RightButton == ev.button():
-            # menu = self.menus[bool(self.selectedShapeCopy)]
-            # self.restoreCursor()
-            # if not menu.exec_(self.mapToGlobal(ev.pos()))\
-            #    and self.selectedShapeCopy:
-            #     # Cancel the move by deleting the shadow copy.
-            #     self.selectedShapeCopy = None
-            #     self.repaint()
-            pass
-        elif Qt.LeftButton == ev.button() and self.selectedShape:
+        # if Qt.RightButton == ev.button():
+        #     menu = self.menus[bool(self.selectedShapeCopy)]
+        #     self.restoreCursor()
+        #     if not menu.exec_(self.mapToGlobal(ev.pos()))\
+        #        and self.selectedShapeCopy:
+        #         # Cancel the move by deleting the shadow copy.
+        #         self.selectedShapeCopy = None
+        #         self.repaint()
+        #     pass
+        if Qt.LeftButton == ev.button() and self.selectedShape:
             if self.selectedVertex():
                 self.overrideCursor(CURSOR_POINT)
             else:
