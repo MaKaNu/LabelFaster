@@ -408,7 +408,8 @@ class StartWindow(QMainWindow, WindowMixin):
         self.adjustScale()
 
     def changeFormat(self):
-        self.dirty = True
+        if self.filePath is not nonePath:
+            self.dirty = True
         if self.usePascalVocFormat:
             self.set_format(FORMAT_YOLO)
         elif self.useYoloFormat:
