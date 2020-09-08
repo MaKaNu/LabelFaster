@@ -3,6 +3,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+import enum
+
 from libs.stringBundle import StringBundle
 from libs.shape import Shape
 from libs.utils import distance
@@ -15,6 +17,10 @@ CURSOR_MOVE = Qt.ClosedHandCursor
 CURSOR_GRAB = Qt.OpenHandCursor
 
 
+class PMode(enum.Enum):
+    CREATE, EDIT, IDLE = list(range(3))
+
+
 class Canvas(QWidget):
     drawingPolygon = pyqtSignal(bool)
     newShape = pyqtSignal()
@@ -22,15 +28,13 @@ class Canvas(QWidget):
     shapeMoved = pyqtSignal()
     finishedDrawing = pyqtSignal()
 
-    CREATE, EDIT, IDLE = list(range(3))
-
     epsilon = 11.0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__pixmap = QPixmap()
-        self.__mode = self.IDLE
-        self.__prevmode = self.IDLE
+        self.__mode = PMode.IDLE
+        self.__prevmode = PMode.IDLE
         self.__current = None
         self.__hShape = None
         self.__hVertex = None
@@ -63,18 +67,25 @@ class Canvas(QWidget):
         self.pixmap = None
         self.update()
 
+    def updateInfoR(self, pos):
+        currentMode = self.mode.name
+        window = self.parent().window()
+        if window.filePath is not None:
+            self.parent().window().labelCoordinates.setText(
+                'MODE: %s X: %d; Y: %d' % (currentMode, pos.x(), pos.y()))
+
     ###########################################################################
     #                                 E D I T                                 #
     ###########################################################################
 
     def setEditing(self, value=True):
-        self.mode = self.EDIT if value else self.CREATE
+        self.mode = PMode.EDIT if value else PMode.CREATE
 
     def drawing(self):
-        return self.mode == self.CREATE
+        return self.mode == PMode.CREATE
 
     def editing(self):
-        return self.mode == self.EDIT
+        return self.mode == PMode.EDIT
 
     ###########################################################################
     #                                P O S E S                                #
@@ -335,28 +346,26 @@ class Canvas(QWidget):
     def leaveEvent(self, ev):
         self.restoreCursor()
 
+    def keyPressEvent(self, ev: QKeyEvent) -> None:
+        if ev.key() == Qt.Key_Control:
+            if self.mode == PMode.CREATE:
+                self.setEditing(True)
+
+    def keyReleaseEvent(self, ev: QKeyEvent) -> None:
+        if ev.key() == Qt.Key_Control:
+            if self.mode == PMode.EDIT:
+                self.setEditing(False)
+                if self.hShape:
+                    self.hShape.highlightClear()
+                self.update()
+                self.hVertex, self.hShape = None, None
+
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
         pos = self.transformPos(ev.pos())
 
-        if Qt.ControlModifier & ev.modifiers():
-            self.setEditing(True)
-            currentMode = 'EDITING'
-        elif self.mode == self.IDLE:
-            currentMode = 'IDLE'
-        else:
-            self.setEditing(False)
-            if self.hShape:
-                self.hShape.highlightClear()
-            self.update()
-            self.hVertex, self.hShape = None, None
-            currentMode = 'CREATING'
-
         # Update coordinates in status bar if image is opened
-        window = self.parent().window()
-        if window.filePath is not None:
-            self.parent().window().labelCoordinates.setText(
-                'MODE: %s X: %d; Y: %d' % (currentMode, pos.x(), pos.y()))
+        self.updateInfoR(pos)
 
         # Polygon drawing.
         if self.drawing():
@@ -450,7 +459,6 @@ class Canvas(QWidget):
                     shape.highlightVertex(index, shape.MOVE_VERTEX)
                     self.overrideCursor(CURSOR_POINT)
                     self.setToolTip("Click & drag to move point")
-                    self.setStatusTip(self.toolTip())
                     self.update()
                     break
                 elif shape.containsPoint(pos):
@@ -459,7 +467,6 @@ class Canvas(QWidget):
                     self.hVertex, self.hShape = None, shape
                     self.setToolTip(
                         "Click & drag to move shape '%s'" % shape.label)
-                    self.setStatusTip(self.toolTip())
                     self.overrideCursor(CURSOR_GRAB)
                     self.update()
                     break
@@ -656,7 +663,7 @@ class Canvas(QWidget):
         self.__shapes = x
 
     def __setMode(self, x):
-        if isinstance(x, int) and x == 1 or x == 0:
+        if isinstance(x, PMode):
             self.__mode = x
         else:
             raise ValueError(x, self.__getStr('modeE'))
