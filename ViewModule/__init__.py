@@ -213,6 +213,11 @@ class StartWindow(QMainWindow, WindowMixin):
         fitWindow = self.get_fitwindow()
         fitWidth = self.get_fitwidth()
 
+        # Formats
+        voc = self.get_voc()
+        yolo = self.get_yolo()
+        boxsup = self.get_boxsup()
+
         # Store actions for further handling.
         self.__actions = struct(
             open=open, openfolder=openfolder, quit=quit, zoom=zoom,
@@ -220,7 +225,7 @@ class StartWindow(QMainWindow, WindowMixin):
             start=start, fitWindow=fitWindow, fitWidth=fitWidth,
             autosaving=autosaving, save=save, saveformat=saveformat,
             changesavefolder=changesavefolder, openNextImg=openNextImg,
-            openPrevImg=openPrevImg,
+            openPrevImg=openPrevImg, voc=voc, yolo=yolo, boxsup=boxsup,
             fileMenuActions=(
                 open,
                 openfolder,
@@ -253,7 +258,8 @@ class StartWindow(QMainWindow, WindowMixin):
             edit=self.menu('&Edit'),
             view=self.menu('&View'),
             help=self.menu('&Help'),
-            recentFiles=QMenu('Open &Recent')
+            recentFiles=QMenu('Open &Recent'),
+            formats=QMenu('Change &Formats')
             )
 
         # Fill Menus
@@ -263,7 +269,7 @@ class StartWindow(QMainWindow, WindowMixin):
             changesavefolder,
             self.menus.recentFiles,
             save,
-            saveformat,
+            self.menus.formats,
             autosaving,
             openNextImg,
             openPrevImg,
@@ -274,6 +280,9 @@ class StartWindow(QMainWindow, WindowMixin):
         ))
         addActions(self.menus.view, (
             zoomIn, zoomOut, zoomOrg, None, fitWindow, fitWidth
+        ))
+        addActions(self.menus.formats, (
+            voc, yolo, boxsup
         ))
         # self.autoSaving,
         # self.singleClassMode,
@@ -361,7 +370,7 @@ class StartWindow(QMainWindow, WindowMixin):
         get_classes, get_startlabel, get_zoom,  get_zoomin, get_zoomout, \
         get_zoomorg, get_fitwindow, get_fitwidth, get_autosaving, get_save, \
         get_changesavefolder, get_saveformat, get_openNextImg, \
-        get_openPrevImg, get_delete
+        get_openPrevImg, get_delete, get_voc, get_yolo, get_boxsup
     from ._filehandler import openFile, openFolder, loadFile, mayContinue, \
         importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
         fileitemDoubleClicked, saveFile, changeSaveFolderDialog, \
@@ -406,6 +415,21 @@ class StartWindow(QMainWindow, WindowMixin):
             self.set_format(FORMAT_BOXSUP)
         elif self.useBoxSupFormat:
             self.set_format(FORMAT_PASCALVOC)
+
+    def formatVOC(self):
+        if self.filePath is not nonePath:
+            self.dirty = True
+        self.set_format(FORMAT_PASCALVOC)
+
+    def formatYOLO(self):
+        if self.filePath is not nonePath:
+            self.dirty = True
+        self.set_format(FORMAT_YOLO)
+
+    def formatBOXSUP(self):
+        if self.filePath is not nonePath:
+            self.dirty = True
+        self.set_format(FORMAT_BOXSUP)
 
     def switchClass(self):
         name = self.sender().toolTip()
