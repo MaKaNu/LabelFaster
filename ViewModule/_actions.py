@@ -137,12 +137,23 @@ def get_yolo(self):
 def get_boxsup(self):
     boxsup = newAction(
         self,
-        getStr('BoxSup'),
+        getStr('BoxSupImg'),
         self.formatBOXSUP,
         '',
         'format_boxsup',
         getStr('boxsupFull'))
     return boxsup
+
+
+def get_boxsupMask(self):
+    boxsupMask = newAction(
+        self,
+        getStr('BoxSupMask'),
+        self.formatBOXSUPMASK,
+        '',
+        'format_boxsup',
+        getStr('boxsupmaskFull'))
+    return boxsupMask
 
 
 def get_autosaving(self):
