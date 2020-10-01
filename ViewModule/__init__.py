@@ -18,7 +18,7 @@ from libs.errors import *
 from libs.labelFile import LabelFile
 from libs.yolo_io import TXT_EXT
 from libs.pascal_io import XML_EXT
-from libs.boxsup_io import PNG_EXT
+from libs.boxsup_io import PNG_EXT, MAT_EXT
 from libs.messages import noClassMessage
 
 
@@ -102,6 +102,8 @@ class StartWindow(QMainWindow, WindowMixin):
         self.__usePascalVocFormat = True
         self.__useYoloFormat = False
         self.__useBoxSupFormat = False
+        self.__useBoxSupMaskFormat = False
+        self.__mask = False
 
         # ##############################WDIGETS############################## #
 
@@ -217,6 +219,7 @@ class StartWindow(QMainWindow, WindowMixin):
         voc = self.get_voc()
         yolo = self.get_yolo()
         boxsup = self.get_boxsup()
+        boxsupMask = self.get_boxsupMask()
 
         # Store actions for further handling.
         self.__actions = struct(
@@ -226,6 +229,7 @@ class StartWindow(QMainWindow, WindowMixin):
             autosaving=autosaving, save=save, saveformat=saveformat,
             changesavefolder=changesavefolder, openNextImg=openNextImg,
             openPrevImg=openPrevImg, voc=voc, yolo=yolo, boxsup=boxsup,
+            boxsupMask=boxsupMask,
             fileMenuActions=(
                 open,
                 openfolder,
@@ -282,7 +286,8 @@ class StartWindow(QMainWindow, WindowMixin):
             zoomIn, zoomOut, zoomOrg, None, fitWindow, fitWidth
         ))
         addActions(self.menus.formats, (
-            voc, yolo, boxsup
+            voc, yolo, boxsup, boxsupMask
+
         ))
         # self.autoSaving,
         # self.singleClassMode,
@@ -370,7 +375,8 @@ class StartWindow(QMainWindow, WindowMixin):
         get_classes, get_startlabel, get_zoom,  get_zoomin, get_zoomout, \
         get_zoomorg, get_fitwindow, get_fitwidth, get_autosaving, get_save, \
         get_changesavefolder, get_saveformat, get_openNextImg, \
-        get_openPrevImg, get_delete, get_voc, get_yolo, get_boxsup
+        get_openPrevImg, get_delete, get_voc, get_yolo, get_boxsup, \
+        get_boxsupMask
     from ._filehandler import openFile, openFolder, loadFile, mayContinue, \
         importFolderImgs, scanAllImages, openPrevImg, openNextImg, \
         fileitemDoubleClicked, saveFile, changeSaveFolderDialog, \
@@ -415,6 +421,8 @@ class StartWindow(QMainWindow, WindowMixin):
         elif self.useYoloFormat:
             self.set_format(FORMAT_BOXSUP)
         elif self.useBoxSupFormat:
+            self.set_format(FORMAT_BOXSUPMASK)
+        elif self.useBoxSupMaskFormat:
             self.set_format(FORMAT_PASCALVOC)
 
     def formatVOC(self):
@@ -431,6 +439,11 @@ class StartWindow(QMainWindow, WindowMixin):
         if self.filePath is not nonePath:
             self.dirty = True
         self.set_format(FORMAT_BOXSUP)
+
+    def formatBOXSUPMASK(self):
+        if self.filePath is not nonePath:
+            self.dirty = True
+        self.set_format(FORMAT_BOXSUPMASK)
 
     def switchClass(self):
         name = self.sender().toolTip()
@@ -702,6 +715,15 @@ class StartWindow(QMainWindow, WindowMixin):
             self.useBoxSupFormat = True
             LabelFile.suffix = PNG_EXT
 
+        elif save_format == FORMAT_BOXSUPMASK:
+            self.actions.saveformat.setText(FORMAT_BOXSUPMASK)
+            self.actions.saveformat.setIcon(newIcon("format_boxsup"))
+            self.usePascalVocFormat = False
+            self.useYoloFormat = False
+            self.useBoxSupFormat = False
+            self.useBoxSupMaskFormat = True
+            LabelFile.suffix = MAT_EXT
+
     ###########################################################################
     #                               G E T T E R                               #
     ###########################################################################
@@ -767,6 +789,9 @@ class StartWindow(QMainWindow, WindowMixin):
 
     def __getUBoxSupFormat(self):
         return self.__useBoxSupFormat
+
+    def __getUBoxSupMFormat(self):
+        return self.__useBoxSupMaskFormat
 
     def __getLineColor(self):
         return self.__lineColor
@@ -902,6 +927,12 @@ class StartWindow(QMainWindow, WindowMixin):
         else:
             raise ValueError(x, self.__getStr('boolE'))
 
+    def __setUBoxSupMFormat(self, x):
+        if isinstance(x, bool):
+            self.__useBoxSupMaskFormat = x
+        else:
+            raise ValueError(x, self.__getStr('boolE'))
+
     def __setLineColor(self, x):
         if isinstance(x, QColor):
             self.__lineColor = x
@@ -960,6 +991,7 @@ class StartWindow(QMainWindow, WindowMixin):
     usePascalVocFormat = property(__getUPascalVocFormat, __setUPascalVocFormat)
     useYoloFormat = property(__getUYoloFormat, __setUYoloFormat)
     useBoxSupFormat = property(__getUBoxSupFormat, __setUBoxSupFormat)
+    useBoxSupMaskFormat = property(__getUBoxSupMFormat, __setUBoxSupMFormat)
     lineColor = property(__getLineColor, __setLineColor)
     fillColor = property(__getFillColor, __setFillColor)
     noSelectionSlot = property(__getNoSelectionSlot, __setNoSelectionSlot)
