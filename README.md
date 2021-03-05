@@ -2,9 +2,7 @@
 
 ![alt text][logo]
 
-/resources/icons/app.png
-    :width: 200px
-    :align: center
+LabelFaster is an image label application, which allows to label images in a workflow, which uses the mouse and the keyboard at the same time. If you have a large image set
 
 run: pyrcc5 -o libs/resources.py resources.qrc
 
