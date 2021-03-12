@@ -188,7 +188,6 @@ def get_openPrevImg(self):
     return openPrevImg
 
 
-
 def get_zoom(self):
     zoom = QWidgetAction(self)
     zoom.setDefaultWidget(self.zoomWidget)

@@ -455,7 +455,7 @@ class StartWindow(QMainWindow, WindowMixin):
             getattr(
                 self.classes,
                 self.classes.activeClass
-                ).setIcon(newIcon('red'))
+                ).setIcon(newIcon('off'))
         setattr(self.classes, 'activeClass', name)
 
     def deleteSelectedShape(self):
