@@ -22,6 +22,8 @@ It is recommended to install the following packages inside the activated venv, s
 cd LabelFaster
 pip install PyQt5
 pip install lxml
+pip install numpy
+pip install scipy
 pyrcc5 -o libs/resources.py resources.qrc
 ```
 
