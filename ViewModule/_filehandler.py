@@ -8,7 +8,7 @@ from libs.labelFile import LabelFile, LabelFileError
 from libs.utils import natural_sort, nonePath
 from libs.pascal_io import PascalVocReader, XML_EXT
 from libs.yolo_io import YoloReader, TXT_EXT
-from libs.boxsup_io import BOXSUPReader, PNG_EXT
+from libs.boxsup_io import BOXSUPReader, MAT_EXT, PNG_EXT
 
 from libs.messages import discardChangesDialog, errorMessage
 from libs.constants import *
@@ -391,8 +391,33 @@ def saveLabels(self, annotationFilePath):
                 self.filePath,
                 self.imageData,
                 self.labelHist,
+                use_mask=self.useBoxSupMaskFormat,
+                lineColor=self.lineColor.getRgb(),
+                fillColor=self.fillColor.getRgb())
+            print('Image:{0} -> Annotation:{1}'.format(
+                  self.filePath, annotationFilePath))
+            annotationFilePath = annotationFilePath.with_suffix('.xml')
+            self.labelFile.savePascalVocFormat(
+                annotationFilePath,
+                shapes,
+                self.filePath,
+                self.imageData,
                 self.lineColor.getRgb(),
                 self.fillColor.getRgb())
+        elif self.useBoxSupMaskFormat is True:
+            if annotationFilePath.suffix.lower() != ".mat":
+                annotationFilePath = annotationFilePath.with_suffix(MAT_EXT)
+            self.labelFile.saveBoxSupFormat(
+                annotationFilePath,
+                shapes,
+                self.filePath,
+                self.imageData,
+                self.labelHist,
+                use_mask=self.useBoxSupMaskFormat,
+                lineColor=self.lineColor.getRgb(),
+                fillColor=self.fillColor.getRgb())
+            print('Image:{0} -> Annotation:{1}'.format(
+                  self.filePath, annotationFilePath))
             annotationFilePath = annotationFilePath.with_suffix('.xml')
             self.labelFile.savePascalVocFormat(
                 annotationFilePath,
@@ -406,7 +431,7 @@ def saveLabels(self, annotationFilePath):
                 annotationFilePath, shapes, self.filePath, self.imageData,
                 self.lineColor.getRgb(), self.fillColor.getRgb())
         print('Image:{0} -> Annotation:{1}'.format(
-            self.filePath, annotationFilePath))
+              self.filePath, annotationFilePath))
         return True
     except LabelFileError as e:
         self.errorMessage(u'Error saving label data', u'<b>%s</b>' % e)

@@ -112,6 +112,50 @@ def get_saveformat(self):
     return saveformat
 
 
+def get_voc(self):
+    voc = newAction(
+        self,
+        getStr('PascalVOC'),
+        self.formatVOC,
+        '',
+        'format_voc',
+        getStr('vocFull'))
+    return voc
+
+
+def get_yolo(self):
+    yolo = newAction(
+        self,
+        getStr('Yolo'),
+        self.formatYOLO,
+        '',
+        'format_yolo',
+        getStr('yoloFull'))
+    return yolo
+
+
+def get_boxsup(self):
+    boxsup = newAction(
+        self,
+        getStr('BoxSupImg'),
+        self.formatBOXSUP,
+        '',
+        'format_boxsup',
+        getStr('boxsupFull'))
+    return boxsup
+
+
+def get_boxsupMask(self):
+    boxsupMask = newAction(
+        self,
+        getStr('BoxSupMask'),
+        self.formatBOXSUPMASK,
+        '',
+        'format_boxsup',
+        getStr('boxsupmaskFull'))
+    return boxsupMask
+
+
 def get_autosaving(self):
     autosaving = newAction(
         self,
@@ -142,7 +186,6 @@ def get_openPrevImg(self):
         'prev',
         getStr('prevImgFull'))
     return openPrevImg
-
 
 
 def get_zoom(self):

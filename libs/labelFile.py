@@ -77,7 +77,7 @@ class LabelFile(object):
 
     def saveBoxSupFormat(
             self, filename, shapes, imagePath, imageData, classList,
-            lineColor=None, fillColor=None, databaseSrc=None):
+            use_mask, lineColor=None, fillColor=None, databaseSrc=None):
         self.labelPath = filename
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
@@ -100,7 +100,7 @@ class LabelFile(object):
                 bndbox[0], bndbox[1], bndbox[2], bndbox[3],
                 label, color)
 
-        writer.save(targetFile=filename, classList=classList)
+        writer.save(use_mask, targetFile=filename, classList=classList)
         return
 
     def toggleVerify(self):
