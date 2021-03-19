@@ -1,0 +1,13 @@
+#
+####### example-requirements.txt #######
+#
+###### Requirements without Version Specifiers ######
+PyQt5
+lxml
+numpy
+scipy
+#
+###### Requirements with Version Specifiers ######
+#   See https://www.python.org/dev/peps/pep-0440/#version-specifiers
+
+#
