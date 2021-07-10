@@ -100,7 +100,7 @@ def openPrevImg(self, _value=False):
             if self.dirty is True:
                 self.saveFile()
         else:
-            self.changeSavedirDialog()
+            self.changeSaveFolderDialog()
             return
 
     if not self.mayContinue():
@@ -126,7 +126,7 @@ def openNextImg(self, _value=False):
             if self.dirty is True:
                 self.saveFile()
         else:
-            self.changeSavedirDialog()
+            self.changeSaveFolderDialog()
             return
 
     if not self.mayContinue():
