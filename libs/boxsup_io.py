@@ -50,7 +50,7 @@ class BOXSUPWriter(QWidget):
             h = box['h']
             color_ = box['color']
             color = color_[0:3] + (255,)
-            painter.fillRect(QRect(x, y, w, h), QColor(*color))
+            painter.fillRect(QRect(int(x), int(y), int(w), int(h)), QColor(*color))
 
             boxName = box['name']
             if boxName not in classList:
